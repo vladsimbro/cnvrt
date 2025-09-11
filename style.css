@@ -76,6 +76,3 @@ footer p{color:var(--muted); font-size:12px;}
 .history-list::-webkit-scrollbar-track,.history-body pre::-webkit-scrollbar-track{background:transparent;}
 .close{float:right; cursor:pointer; font-size:22px; color:#333;}
 #clearHistoryBtn{margin-bottom:10px; align-self:flex-start;}
-.small {
-padding-left:40px
-}
