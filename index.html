@@ -203,20 +203,21 @@
       return raw.map(s => normalizeLine(s)).filter(s => s.length > 0);
     }
 
-    function convert(){
+function convert(){
   const arr = linesFromInput(input.value);
   if(noQuotes.checked){
-    const content = arr.length ? arr.map(s => s).join('\n') : '';
+    const content = arr.length ? arr.join(',\n') : '';
     output.value = '[\n' + content + '\n]';
   } else {
-    // генерируем JSON вручную без лишних пробелов
-    const quoted = arr.map(s => `"${s}"`).join('\n');
+    // корректный JSON с запятыми
+    const quoted = arr.map(s => `"${s}"`).join(',\n');
     output.value = '[\n' + quoted + '\n]';
   }
   // clear placeholder so user's result is visible
   output.placeholder = '';
   saveUserState();
 }
+
 
 
     // --- UI wiring ---
