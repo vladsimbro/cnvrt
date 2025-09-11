@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>UUID Converter</title>
+  <link rel="stylesheet" href="simple.css">
+  <style>
+    /* модалка для истории */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      max-height: 80%;
+      overflow-y: auto;
+      width: 500px;
+      border-radius: 10px;
+    }
+    .modal-content h2 { margin-top: 0; }
+    .history-item {
+      margin-bottom: 8px;
+    }
+    .history-header {
+      cursor: pointer;
+      padding: 6px;
+      background: #f0f0f0;
+      border-radius: 5px;
+    }
+    .history-body {
+      display: none;
+      margin-top: 5px;
+      padding: 8px;
+      background: #fafafa;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .history-body pre {
+      background: #f5f5f5;
+      padding: 6px;
+      border-radius: 5px;
+      white-space: pre-wrap;
+    }
+    .close {
+      float: right;
+      cursor: pointer;
+      font-size: 18px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>UUID Converter</h1>
+    <div class="panel">
+      <div class="row">
+        <div class="col">
+          <div class="small">Поле для ввода:</div>
+          <textarea id="input" placeholder="Введите строки"></textarea>
+          <div class="controls">
+            <button id="clear" class="ghost">Очистить</button>
+            <label class="small">
+              <input type="checkbox" id="noQuotes"> Вывод без кавычек (НЕвалидный JSON)
+            </label>
+          </div>
+        </div>
+        <div class="col">
+          <div class="small">Результат</div>
+          <textarea id="output" readonly placeholder="Тут будет ваш результат"></textarea>
+          <div class="controls">
+            <button id="convert">Конвертировать</button>
+            <button id="copy" class="ghost">Копировать</button>
+            <button id="download" class="ghost">Скачать .json</button>
+            <button id="historyBtn" class="ghost">История</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- модалка для истории -->
+  <div class="modal" id="historyModal">
+    <div class="modal-content">
+      <span class="close" id="closeHistory">&times;</span>
+      <h2>История</h2>
+      <div id="historyContent">Нет записей</div>
+    </div>
+  </div>
+
+  <script>
+    // Elements
+    const input = document.getElementById('input');
+    const output = document.getElementById('output');
+    const convertBtn = document.getElementById('convert');
+    const clearBtn = document.getElementById('clear');
+    const copyBtn = document.getElementById('copy');
+    const downloadBtn = document.getElementById('download');
+    const noQuotes = document.getElementById('noQuotes');
+    const historyBtn = document.getElementById('historyBtn');
+    const historyModal = document.getElementById('historyModal');
+    const closeHistory = document.getElementById('closeHistory');
+    const historyContent = document.getElementById('historyContent');
+
+    // --- История ---
+    const historyKey = "uuid_converter_history";
+
+    function addToHistory(inputText, outputText){
+      const now = new Date();
+      const record = {
+        time: now.toLocaleString(),
+        input: inputText,
+        output: outputText
+      };
+      let history = [];
+      try {
+        history = JSON.parse(localStorage.getItem(historyKey)) || [];
+      } catch(e){}
+      history.unshift(record); // новые сверху
+      localStorage.setItem(historyKey, JSON.stringify(history));
+    }
+
+    function renderHistory(){
+      let history = [];
+      try {
+        history = JSON.parse(localStorage.getItem(historyKey)) || [];
+      } catch(e){}
+      if(history.length === 0){
+        historyContent.textContent = "Нет записей";
+        return;
+      }
+      historyContent.innerHTML = history.map((item, idx) => `
+        <div class="history-item">
+          <div class="history-header" data-idx="${idx}">
+            ${item.time}
+          </div>
+          <div class="history-body" id="body-${idx}">
+            <u>Ввод:</u>
+            <pre>${item.input}</pre>
+            <u>Результат:</u>
+            <pre>${item.output}</pre>
+          </div>
+        </div>
+      `).join("");
+
+      // навешиваем обработчики
+      document.querySelectorAll(".history-header").forEach(el=>{
+        el.addEventListener("click", ()=>{
+          const idx = el.dataset.idx;
+          const body = document.getElementById("body-"+idx);
+          body.style.display = body.style.display === "block" ? "none" : "block";
+        });
+      });
+    }
+
+    // --- Сохраняем только чекбокс, без input/output ---
+    const storageKey = 'uuid_converter_settings';
+
+    function saveUserState(){
+      const state = {
+        noQuotes: noQuotes.checked
+      };
+      try{ localStorage.setItem(storageKey, JSON.stringify(state)); }catch(e){}
+    }
+    function loadUserState(){
+      try{
+        const raw = localStorage.getItem(storageKey);
+        if(!raw) return false;
+        const st = JSON.parse(raw);
+        if(typeof st.noQuotes === 'boolean') noQuotes.checked = st.noQuotes;
+        return true;
+      }catch(e){ return false; }
+    }
+
+    // --- Normalization + conversion ---
+    function normalizeLine(s){
+      let str = String(s).replace(/\r/g,'').trim();
+      if(str.length >= 2){
+        const first = str[0];
+        const last = str[str.length - 1];
+        if((first === '"' && last === '"') || (first === "'" && last === "'")){
+          return str.slice(1, -1);
+        }
+        if(str.startsWith('\\"') && str.endsWith('\\"')){
+          return str.slice(2, -2);
+        }
+        if(str.startsWith("\\'") && str.endsWith("\\'")){
+          return str.slice(2, -2);
+        }
+      }
+      return str;
+    }
+
+    function linesFromInput(text){
+      if(text == null) return [];
+      const raw = String(text).replace(/\r/g,'').split(/\n/);
+      return raw.map(s => normalizeLine(s)).filter(s => s.length > 0);
+    }
+
+    function convert(){
+      const arr = linesFromInput(input.value);
+      let result;
+      if(noQuotes.checked){
+        result = '[\n' + (arr.length ? arr.map(s => '  ' + s).join('\n') : '') + '\n]';
+      } else {
+        result = JSON.stringify(arr, null, 2);
+      }
+      output.value = result;
+      output.placeholder = '';
+      addToHistory(input.value, result);
+      saveUserState();
+    }
+
+    // --- UI wiring ---
+    convertBtn.addEventListener('click', convert);
+
+    clearBtn.addEventListener('click', ()=>{
+      input.value = '';
+      output.value = '';
+      output.placeholder = 'Тут будет ваш результат';
+    });
+
+    copyBtn.addEventListener('click', async ()=>{
+      try{ await navigator.clipboard.writeText(output.value); copyBtn.textContent = 'Скопировано!'; setTimeout(()=>copyBtn.textContent='Копировать',1200); }catch(e){ alert('Не удалось скопировать — используйте Ctrl+C.'); }
+    });
+
+    downloadBtn.addEventListener('click', ()=>{
+      const filename = 'output.json';
+      const blob = new Blob([output.value], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+
+    // История кнопка
+    historyBtn.addEventListener('click', ()=>{
+      renderHistory();
+      historyModal.style.display = 'flex';
+    });
+    closeHistory.addEventListener('click', ()=>{ historyModal.style.display = 'none'; });
+    window.addEventListener('click', (e)=>{ if(e.target === historyModal){ historyModal.style.display = 'none'; }});
+
+    // placeholder input
+    const inputPlaceholder = input.placeholder || '';
+    input.addEventListener('focus', ()=>{ input.dataset.ph = input.placeholder; input.placeholder = ''; });
+    input.addEventListener('blur', ()=>{ if(!input.value) input.placeholder = input.dataset.ph || inputPlaceholder; });
+
+    noQuotes.addEventListener('change', saveUserState);
+
+    // try to load existing user state
+    loadUserState();
+  </script>
+</body>
+</html>
