@@ -45,7 +45,7 @@ button.ghost:hover{transform:translateY(-2px) translateX(2px); background:#f0f0f
 button.floating{transition:all 0.3s ease;}
 button.floating:hover{transform:translateY(-2px) translateX(3px); box-shadow:0 4px 12px rgba(0,0,0,0.12);}
 
-.small{font-size:13px;color:var; padding-left:20(--muted)}
+.small{font-size:13px;color:var(--muted)}
 @media(max-width:760px){.row{flex-direction:column}}
 
 footer p{color:var(--muted); font-size:12px;}
@@ -76,3 +76,6 @@ footer p{color:var(--muted); font-size:12px;}
 .history-list::-webkit-scrollbar-track,.history-body pre::-webkit-scrollbar-track{background:transparent;}
 .close{float:right; cursor:pointer; font-size:22px; color:#333;}
 #clearHistoryBtn{margin-bottom:10px; align-self:flex-start;}
+.small {
+padding-left:40px
+}
