@@ -4,58 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>UUID Converter</title>
-  <link rel="icon" href="favicon.jpg">
   <link rel="stylesheet" href="style.css">
-  <style>
-    /* модалка для истории */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
-    }
-    .modal-content {
-      background: #fff;
-      padding: 20px;
-      max-height: 80%;
-      overflow-y: auto;
-      width: 500px;
-      border-radius: 10px;
-    }
-    .modal-content h2 { margin-top: 0; }
-    .history-item {
-      margin-bottom: 8px;
-    }
-    .history-header {
-      cursor: pointer;
-      padding: 6px;
-      background: #f0f0f0;
-      border-radius: 5px;
-    }
-    .history-body {
-      display: none;
-      margin-top: 5px;
-      padding: 8px;
-      background: #fafafa;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-    }
-    .history-body pre {
-      background: #f5f5f5;
-      padding: 6px;
-      border-radius: 5px;
-      white-space: pre-wrap;
-    }
-    .close {
-      float: right;
-      cursor: pointer;
-      font-size: 18px;
-      color: #333;
-    }
-  </style>
+  <link rel="icon" href="favicon.jpg">
 </head>
 <body>
   <div class="container">
@@ -91,12 +41,12 @@
     <div class="modal-content">
       <span class="close" id="closeHistory">&times;</span>
       <h2>История</h2>
-      <div id="historyContent">Нет записей</div>
+      <button id="clearHistoryBtn" class="ghost">Очистить историю</button>
+      <div id="historyContent" style="max-height:60vh; overflow-y:auto;">Нет записей</div>
     </div>
   </div>
 
   <script>
-    // Elements
     const input = document.getElementById('input');
     const output = document.getElementById('output');
     const convertBtn = document.getElementById('convert');
@@ -108,39 +58,26 @@
     const historyModal = document.getElementById('historyModal');
     const closeHistory = document.getElementById('closeHistory');
     const historyContent = document.getElementById('historyContent');
+    const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
-    // --- История ---
     const historyKey = "uuid_converter_history";
 
     function addToHistory(inputText, outputText){
       const now = new Date();
-      const record = {
-        time: now.toLocaleString(),
-        input: inputText,
-        output: outputText
-      };
+      const record = { time: now.toLocaleString(), input: inputText, output: outputText };
       let history = [];
-      try {
-        history = JSON.parse(localStorage.getItem(historyKey)) || [];
-      } catch(e){}
-      history.unshift(record); // новые сверху
+      try { history = JSON.parse(localStorage.getItem(historyKey)) || []; } catch(e){}
+      history.unshift(record);
       localStorage.setItem(historyKey, JSON.stringify(history));
     }
 
     function renderHistory(){
       let history = [];
-      try {
-        history = JSON.parse(localStorage.getItem(historyKey)) || [];
-      } catch(e){}
-      if(history.length === 0){
-        historyContent.textContent = "Нет записей";
-        return;
-      }
-      historyContent.innerHTML = history.map((item, idx) => `
+      try { history = JSON.parse(localStorage.getItem(historyKey)) || []; } catch(e){}
+      if(history.length === 0){ historyContent.textContent = "Нет записей"; return; }
+      historyContent.innerHTML = history.map((item, idx)=>`
         <div class="history-item">
-          <div class="history-header" data-idx="${idx}">
-            ${item.time}
-          </div>
+          <div class="history-header" data-idx="${idx}">${item.time}</div>
           <div class="history-body" id="body-${idx}">
             <u>Ввод:</u>
             <pre>${item.input}</pre>
@@ -150,113 +87,80 @@
         </div>
       `).join("");
 
-      // навешиваем обработчики
       document.querySelectorAll(".history-header").forEach(el=>{
         el.addEventListener("click", ()=>{
           const idx = el.dataset.idx;
           const body = document.getElementById("body-"+idx);
-          body.style.display = body.style.display === "block" ? "none" : "block";
+          body.classList.toggle('open'); // плавное раскрытие
         });
       });
     }
 
-    // --- Сохраняем только чекбокс, без input/output ---
-    const storageKey = 'uuid_converter_settings';
+    clearHistoryBtn.addEventListener('click', ()=>{
+      if(confirm('Вы уверены, что хотите очистить историю?')){
+        localStorage.removeItem(historyKey);
+        renderHistory();
+      }
+    });
 
-    function saveUserState(){
-      const state = {
-        noQuotes: noQuotes.checked
-      };
-      try{ localStorage.setItem(storageKey, JSON.stringify(state)); }catch(e){}
-    }
+    const storageKey = 'uuid_converter_settings';
+    function saveUserState(){ localStorage.setItem(storageKey, JSON.stringify({ noQuotes: noQuotes.checked })); }
     function loadUserState(){
       try{
         const raw = localStorage.getItem(storageKey);
         if(!raw) return false;
         const st = JSON.parse(raw);
         if(typeof st.noQuotes === 'boolean') noQuotes.checked = st.noQuotes;
-        return true;
       }catch(e){ return false; }
     }
 
-    // --- Normalization + conversion ---
     function normalizeLine(s){
       let str = String(s).replace(/\r/g,'').trim();
       if(str.length >= 2){
-        const first = str[0];
-        const last = str[str.length - 1];
-        if((first === '"' && last === '"') || (first === "'" && last === "'")){
-          return str.slice(1, -1);
-        }
-        if(str.startsWith('\\"') && str.endsWith('\\"')){
-          return str.slice(2, -2);
-        }
-        if(str.startsWith("\\'") && str.endsWith("\\'")){
-          return str.slice(2, -2);
-        }
+        const first = str[0], last = str[str.length - 1];
+        if((first === '"' && last === '"') || (first === "'" && last === "'")) return str.slice(1,-1);
+        if(str.startsWith('\\"') && str.endsWith('\\"')) return str.slice(2,-2);
+        if(str.startsWith("\\'") && str.endsWith("\\'")) return str.slice(2,-2);
       }
       return str;
     }
 
     function linesFromInput(text){
-      if(text == null) return [];
+      if(text==null) return [];
       const raw = String(text).replace(/\r/g,'').split(/\n/);
-      return raw.map(s => normalizeLine(s)).filter(s => s.length > 0);
+      return raw.map(s => normalizeLine(s)).filter(s => s.length>0);
     }
 
-function convert(){
-  const arr = linesFromInput(input.value);
-  if(noQuotes.checked){
-    const content = arr.length ? arr.join(',\n') : '';
-    output.value = '[\n' + content + '\n]';
-  } else {
-    // корректный JSON с запятыми
-    const quoted = arr.map(s => `"${s}"`).join(',\n');
-    output.value = '[\n' + quoted + '\n]';
-  }
-  // clear placeholder so user's result is visible
-  output.placeholder = '';
-  saveUserState();
-}
+    function convert(){
+      const arr = linesFromInput(input.value);
+      let content = noQuotes.checked ? arr.join(',\n') : arr.map(s=>`"${s}"`).join(',\n');
+      output.value = '[\n' + content + '\n]';
+      output.placeholder = '';
+      saveUserState();
+      addToHistory(input.value, output.value);
+    }
 
-
-
-    // --- UI wiring ---
     convertBtn.addEventListener('click', convert);
-
-    clearBtn.addEventListener('click', ()=>{
-      input.value = '';
-      output.value = '';
-      output.placeholder = 'Тут будет ваш результат';
-    });
-
+    clearBtn.addEventListener('click', ()=>{ input.value=''; output.value=''; output.placeholder='Тут будет ваш результат'; });
     copyBtn.addEventListener('click', async ()=>{
-      try{ await navigator.clipboard.writeText(output.value); copyBtn.textContent = 'Скопировано!'; setTimeout(()=>copyBtn.textContent='Копировать',1200); }catch(e){ alert('Не удалось скопировать — используйте Ctrl+C.'); }
+      try{ await navigator.clipboard.writeText(output.value); copyBtn.textContent='Скопировано!'; setTimeout(()=>copyBtn.textContent='Копировать',1200); }
+      catch(e){ alert('Не удалось скопировать — используйте Ctrl+C.'); }
     });
-
     downloadBtn.addEventListener('click', ()=>{
-      const filename = 'output.json';
       const blob = new Blob([output.value], {type:'application/json'});
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      const a = document.createElement('a'); a.href=url; a.download='output.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     });
 
-    // История кнопка
-    historyBtn.addEventListener('click', ()=>{
-      renderHistory();
-      historyModal.style.display = 'flex';
-    });
-    closeHistory.addEventListener('click', ()=>{ historyModal.style.display = 'none'; });
-    window.addEventListener('click', (e)=>{ if(e.target === historyModal){ historyModal.style.display = 'none'; }});
+    historyBtn.addEventListener('click', ()=>{ renderHistory(); historyModal.style.display='flex'; });
+    closeHistory.addEventListener('click', ()=>{ historyModal.style.display='none'; });
+    window.addEventListener('click', (e)=>{ if(e.target===historyModal){ historyModal.style.display='none'; } });
 
-    // placeholder input
     const inputPlaceholder = input.placeholder || '';
-    input.addEventListener('focus', ()=>{ input.dataset.ph = input.placeholder; input.placeholder = ''; });
+    input.addEventListener('focus', ()=>{ input.dataset.ph=input.placeholder; input.placeholder=''; });
     input.addEventListener('blur', ()=>{ if(!input.value) input.placeholder = input.dataset.ph || inputPlaceholder; });
 
     noQuotes.addEventListener('change', saveUserState);
-
-    // try to load existing user state
     loadUserState();
   </script>
 </body>
