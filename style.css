@@ -4,7 +4,7 @@
   --accent: #2b7be4;
   --muted: #556;
   --border: #e1e6ea;
-  --radius: 8px;
+  --radius: 10px;
   --max-width: 980px;
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", monospace;
 }
@@ -20,25 +20,19 @@ body{
   padding:20px;
 }
 .container{max-width:var(--max-width);margin:0 auto}
-h1{font-size:18px;margin:0 0 12px}
-.panel{background:var(--card);padding:14px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,0.03)}
-.row{display:flex;gap:12px;align-items:flex-start}
+h1{font-size:20px;margin:0 0 14px}
+.panel{background:var(--card);padding:18px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,0.08)}
+.row{display:flex;gap:14px;align-items:flex-start}
 .col{flex:1}
-textarea{width:100%;min-height:160px;padding:10px;border:1px solid #cfd8dc;border-radius:6px;resize:vertical;font-family:var(--mono);font-size:13px}
-.controls{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-button{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:14px}
-button.ghost{background:transparent;border:1px solid #e9eef9;color:#0b2548}
-.linkish{background:transparent;border:0;color:var(--accent);cursor:pointer;padding:6px;font-size:13px}
+textarea{width:100%;min-height:160px;padding:12px;border:1px solid #cfd8dc;border-radius:8px;resize:vertical;font-family:var(--mono);font-size:14px;transition:border 0.2s}
+textarea:focus{border-color:var(--accent)}
+.controls{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button{background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:14px;transition:background 0.2s}
+button:hover{background:#1a5fc1}
+button.ghost{background:transparent;border:1px solid #cfd8dc;color:#0b2548}
+button.ghost:hover{background:#f0f0f0}
 .small{font-size:13px;color:var(--muted)}
-.tests{margin-top:12px;background:#fafafa;border:1px dashed #d0d7dd;padding:8px;border-radius:6px}
-.helper{font-size:12px;color:#666;margin-top:8px}
-.footer-actions{display:flex;gap:8px;margin-top:10px;align-items:center}
 @media(max-width:760px){.row{flex-direction:column}}
-button:focus, textarea:focus, .linkish:focus{outline:2px solid rgba(43,123,228,0.18);outline-offset:2px}
-.small {
-  padding-bottom: 3px;
-  padding-left: 3px;
-}
 
 /* --- Модалка для истории --- */
 .modal {
@@ -46,69 +40,109 @@ button:focus, textarea:focus, .linkish:focus{outline:2px solid rgba(43,123,228,0
   position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0,0,0,0.55);
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: fadeIn 0.3s;
 }
 
 .modal-content {
   background: #fff;
-  padding: 20px;
-  width: 500px;
-  border-radius: 10px;
+  padding: 22px;
+  width: 520px;
+  border-radius: 14px;
   max-height: 80vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.2);
 }
+
+@keyframes fadeIn { from {opacity:0} to {opacity:1} }
 
 .modal-content h2 { 
   margin-top: 0; 
   display:inline-block; 
 }
 
+#historyNotice {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 10px;
+}
+
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
 .history-item { 
-  margin-bottom: 8px; 
+  margin-bottom: 10px; 
+  border-radius: 8px;
+  background: #fefefe;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.03);
 }
 
 .history-header {
   cursor: pointer;
-  padding: 6px;
-  background: #f0f0f0;
-  border-radius: 5px;
+  padding: 8px 10px;
+  font-weight: 500;
+  background: #f8f8f8;
+  border-radius: 8px 8px 0 0;
+  transition: background 0.2s;
 }
+.history-header:hover { background: #eef2f7 }
 
 .history-body {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease, padding 0.3s ease;
-  margin-top: 0;
-  padding: 0 8px;
+  transition: max-height 0.35s ease, padding 0.35s ease;
+  padding: 0 10px;
   background: #fafafa;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  border-top: 1px solid #e0e0e0;
+  border-radius: 0 0 8px 8px;
 }
 
-.history-body.open {
-  max-height: 500px; /* достаточно, чтобы вместить контент */
-  margin-top: 5px;
-  padding: 8px;
-}
+.history-body.open { padding: 10px; overflow-y: auto; }
 
 .history-body pre {
   background: #f5f5f5;
-  padding: 6px;
-  border-radius: 5px;
+  padding: 8px;
+  border-radius: 6px;
   white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+/* Скроллы */
+.history-list::-webkit-scrollbar,
+.history-body pre::-webkit-scrollbar {
+  width: 6px;
+}
+
+.history-list::-webkit-scrollbar-thumb,
+.history-body pre::-webkit-scrollbar-thumb {
+  background-color: rgba(100,100,100,0.3);
+  border-radius: 3px;
+}
+
+.history-list::-webkit-scrollbar-track,
+.history-body pre::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .close {
   float: right;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 20px;
   color: #333;
 }
 
 #clearHistoryBtn { 
   margin-bottom: 10px; 
+  align-self: flex-start;
 }
-
