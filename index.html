@@ -41,8 +41,11 @@
     <div class="modal-content">
       <span class="close" id="closeHistory">&times;</span>
       <h2>История</h2>
+      <div id="historyNotice">Если сайт начинает лагать, можно удалить историю.</div>
       <button id="clearHistoryBtn" class="ghost">Очистить историю</button>
-      <div id="historyContent" style="max-height:60vh; overflow-y:auto;">Нет записей</div>
+      <div class="history-list" id="historyContent">
+        Нет записей
+      </div>
     </div>
   </div>
 
@@ -75,6 +78,7 @@
       let history = [];
       try { history = JSON.parse(localStorage.getItem(historyKey)) || []; } catch(e){}
       if(history.length === 0){ historyContent.textContent = "Нет записей"; return; }
+
       historyContent.innerHTML = history.map((item, idx)=>`
         <div class="history-item">
           <div class="history-header" data-idx="${idx}">${item.time}</div>
@@ -91,7 +95,13 @@
         el.addEventListener("click", ()=>{
           const idx = el.dataset.idx;
           const body = document.getElementById("body-"+idx);
-          body.classList.toggle('open'); // плавное раскрытие
+          if(body.classList.contains('open')){
+            body.style.maxHeight = null;
+            body.classList.remove('open');
+          } else {
+            body.classList.add('open');
+            body.style.maxHeight = body.scrollHeight + "px";
+          }
         });
       });
     }
