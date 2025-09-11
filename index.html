@@ -1,65 +1,134 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>UUID Converter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="favicon.jpg">
 </head>
 <body>
-  <div class="container">
+  <div class="app-shell container">
 
-    <!-- HEADER -->
-    <header>
-      <h1>UUID Converter</h1>
+    <!-- HEADER with controls: palette, theme, hotkeys -->
+    <header class="site-header" role="banner">
+      <div class="header-left">
+        <h1 class="title">UUID Converter</h1>
+      </div>
+
+      <div class="header-controls" role="navigation" aria-label="Настройки интерфейса">
+        <!-- Palette picker -->
+        <div class="palette-control" id="paletteControl" aria-label="Палитра акцента">
+          <button class="icon-btn" id="paletteToggle" aria-haspopup="true" aria-expanded="false" aria-label="Палитра">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3C7 3 4 6 4 11c0 5 4 8 8 8s8-3 8-8c0-5-3-8-8-8z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="palette-popover" id="palettePopover" role="dialog" aria-hidden="true">
+            <div class="palette-presets" id="palettePresets">
+              <!-- Presets injected via JS -->
+            </div>
+            <label class="palette-custom">
+              <input type="color" id="paletteColor" value="#2b7be4" aria-label="Выбрать свой цвет акцента">
+              <span class="small">Свой цвет</span>
+            </label>
+            <div class="palette-actions">
+              <button id="paletteReset" class="ghost small">Сбросить</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hotkeys help -->
+        <button id="hotkeysBtn" class="icon-btn" aria-haspopup="true" aria-expanded="false" aria-label="Справка по хоткеям">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
     </header>
 
-    <!-- MAIN CONTENT -->
-    <main class="panel">
-      <div class="row">
+    <!-- MAIN (vertical layout: input top, output bottom) -->
+    <main class="panel" id="mainPanel" role="main" aria-labelledby="mainTitle">
 
-        <!-- Ввод -->
-        <section class="col">
-          <label class="small" for="input">Поле для ввода</label>
-          <textarea id="input" placeholder="Введите строки..."></textarea>
-          <div class="controls">
-            <button id="clear" class="ghost" title="Очистить поле ввода">Очистить</button>
+      <!-- INPUT (top) -->
+      <section class="block input-block" aria-labelledby="inputLabel">
+        <label id="inputLabel" class="small field-label" for="input">Поле для ввода</label>
+        <textarea id="input" name="input" placeholder="Введите строки, по одной на строку..." aria-label="Ввод строк для конвертации" spellcheck="false" autocomplete="off"></textarea>
+      </section>
+
+      <hr class="divider" />
+
+      <!-- OUTPUT (bottom) -->
+      <section class="block output-block" aria-labelledby="outputLabel">
+        <label id="outputLabel" class="small field-label" for="output">Результат</label>
+        <textarea id="output" name="output" readonly placeholder="Ваш результат..." aria-label="Результат конвертации" spellcheck="false"></textarea>
+
+        <!-- controls row: left = clear, right = convert/history/copy -->
+        <div class="controls-row">
+          <div class="controls-left">
+            <button id="clear" type="button" class="ghost btn-animate" aria-label="Очистить поле ввода">
+              <span class="btn-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 6h18" stroke="currentColor" stroke-width="1.4"/><path d="M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="currentColor" stroke-width="1.4"/></svg>
+              </span>
+              Очистить
+            </button>
           </div>
-        </section>
 
-        <!-- Результат -->
-        <section class="col">
-          <label class="small" for="output">Результат</label>
-          <textarea id="output" readonly placeholder="Ваш результат..."></textarea>
-          <div class="controls controls-right">
-            <button id="convert" title="Конвертировать строки в JSON">Конвертировать</button>
-            <button id="historyBtn" class="ghost floating" title="Открыть историю">История</button>
-            <button id="copy" class="ghost" title="Скопировать результат в буфер обмена">Копировать</button>
+          <div class="controls-right controls-nowrap">
+            <button id="convert" type="button" class="btn-animate" data-tooltip="Ctrl/Cmd + Enter" aria-keyshortcuts="Ctrl+Enter">
+              <span class="btn-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12a9 9 0 10-9 9" stroke="currentColor" stroke-width="1.4"/><path d="M21 3v6h-6" stroke="currentColor" stroke-width="1.4"/></svg>
+              </span>
+              Конвертировать
+            </button>
+
+            <button id="historyBtn" type="button" class="ghost floating btn-animate" aria-label="Открыть историю">
+              <span class="btn-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12a9 9 0 11-2.9-6.3" stroke="currentColor" stroke-width="1.4"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.4"/></svg>
+              </span>
+              История
+              <span class="badge" id="historyCount" aria-hidden="true">0</span>
+            </button>
+
+            <button id="copy" type="button" class="ghost btn-animate" aria-label="Копировать результат">
+              <span class="btn-icon" id="copyIcon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M16 4h-2a2 2 0 0 0-4 0H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z" stroke="currentColor" stroke-width="1.4"/></svg>
+              </span>
+              <span class="copy-label">Копировать</span>
+            </button>
           </div>
-        </section>
-
-      </div>
+        </div>
+      </section>
     </main>
 
     <!-- FOOTER -->
-    <footer></footer>
-
+    <footer class="site-footer" role="contentinfo">
+    </footer>
   </div>
 
-  <!-- Модалка истории -->
-  <div class="modal animated" id="historyModal">
-    <div class="modal-content">
-      <span class="close" id="closeHistory">&times;</span>
-      <h2>История</h2>
-      <div id="historyNotice">Если сайт начинает лагать, можно удалить историю.</div>
-      <button id="clearHistoryBtn" class="ghost">Очистить историю</button>
-      <div class="history-list" id="historyContent">Нет записей</div>
+  <!-- HISTORY MODAL -->
+  <div class="modal animated" id="historyModal" role="dialog" aria-modal="true" aria-labelledby="historyTitle" aria-hidden="true">
+    <div class="modal-content" role="document">
+      <button class="close" id="closeHistory" aria-label="Закрыть историю">×</button>
+      <h2 id="historyTitle">История</h2>
+      <div id="historyNotice" class="small">Если сайт начинает лагать, можно удалить историю.</div>
+      <button id="clearHistoryBtn" type="button" class="ghost">Очистить историю</button>
+      <div class="history-list" id="historyContent" aria-live="polite">Нет записей</div>
     </div>
   </div>
 
-  <!-- СКРИПТ -->
+  <!-- HOTKEYS MODAL -->
+  <div class="modal animated" id="hotkeysModal" role="dialog" aria-modal="true" aria-labelledby="hotkeysTitle" aria-hidden="true">
+    <div class="modal-content" role="document">
+      <button class="close" id="closeHotkeys" aria-label="Закрыть">×</button>
+      <h2 id="hotkeysTitle">Горячие клавиши</h2>
+      <ul class="hotkeys-list">
+        <li><strong>Ctrl / ⌘ + Enter</strong> — Конвертировать</li>
+        <li><strong>Esc</strong> — Закрыть модальные окна</li>
+      </ul>
+      <div class="small muted">Поддерживаются клавиши Ctrl (Windows/Linux) и ⌘ (Mac).</div>
+    </div>
+  </div>
+
   <script>
+    /* ====== DOM elements & keys ====== */
     const input = document.getElementById('input');
     const output = document.getElementById('output');
     const convertBtn = document.getElementById('convert');
@@ -70,116 +139,249 @@
     const closeHistory = document.getElementById('closeHistory');
     const historyContent = document.getElementById('historyContent');
     const clearHistoryBtn = document.getElementById('clearHistoryBtn');
-    const historyKey = "uuid_converter_history";
+    const historyCountEl = document.getElementById('historyCount');
+    const mainPanel = document.getElementById('mainPanel');
 
-    function addToHistory(inputText, outputText){
-      const now = new Date();
-      const record = { time: now.toLocaleString(), input: inputText, output: outputText };
-      let history = [];
-      try { history = JSON.parse(localStorage.getItem(historyKey)) || []; } catch(e){}
-      history.unshift(record);
-      localStorage.setItem(historyKey, JSON.stringify(history));
+    const hotkeysBtn = document.getElementById('hotkeysBtn');
+    const hotkeysModal = document.getElementById('hotkeysModal');
+    const closeHotkeys = document.getElementById('closeHotkeys');
+
+    const paletteControl = document.getElementById('paletteControl');
+    const paletteToggle = document.getElementById('paletteToggle');
+    const palettePopover = document.getElementById('palettePopover');
+    const paletteColor = document.getElementById('paletteColor');
+    const palettePresetsContainer = document.getElementById('palettePresets');
+    const paletteReset = document.getElementById('paletteReset');
+
+    const historyKey = 'uuid_converter_history';
+    const prefsKey = 'uuid_converter_prefs';
+    const inputSaveKey = 'uuid_converter_input';
+
+    /* ====== Defaults & Presets ====== */
+    const defaultAccent = '#2b7be4';
+    const defaultAccent600 = '#1a5fc1';
+    const presets = ['#2b7be4','#16a34a','#7c3aed','#f97316','#ef4444','#0ea5a4'];
+
+    /* ====== Color helpers ====== */
+    function hexToRgb(hex){ hex = hex.replace('#',''); if(hex.length === 3) hex = hex.split('').map(ch=>ch+ch).join(''); const bigint = parseInt(hex,16); return { r: (bigint>>16)&255, g: (bigint>>8)&255, b: bigint&255 }; }
+    function rgbToHex(r,g,b){ const toHex = n => ('0'+Math.round(n).toString(16)).slice(-2); return '#' + toHex(r) + toHex(g) + toHex(b); }
+    function rgbToHsl(r,g,b){ r/=255; g/=255; b/=255; const max = Math.max(r,g,b), min = Math.min(r,g,b); let h=0, s=0, l=(max+min)/2; if(max!==min){ const d = max-min; s = l>0.5 ? d/(2-max-min) : d/(max+min); switch(max){ case r: h = (g-b)/d + (g<b?6:0); break; case g: h = (b-r)/d + 2; break; case b: h = (r-g)/d + 4; break; } h /= 6; } return { h: h*360, s: s*100, l: l*100 }; }
+    function hslToRgb(h,s,l){ h/=360; s/=100; l/=100; if(s===0){ const v = Math.round(l*255); return { r:v,g:v,b:v }; } function hue2rgb(p,q,t){ if(t<0) t+=1; if(t>1) t-=1; if(t<1/6) return p+(q-p)*6*t; if(t<1/2) return q; if(t<2/3) return p+(q-p)*(2/3-t)*6; return p; } const q = l<0.5 ? l*(1+s) : l+s - l*s; const p = 2*l - q; const r = hue2rgb(p,q,h+1/3); const g = hue2rgb(p,q,h); const b = hue2rgb(p,q,h-1/3); return { r: Math.round(r*255), g: Math.round(g*255), b: Math.round(b*255) }; }
+    function darkenHex(hex, amountPercent=15){ const {r,g,b} = hexToRgb(hex); const hsl = rgbToHsl(r,g,b); hsl.l = Math.max(0, hsl.l - amountPercent); const rgb = hslToRgb(hsl.h,hsl.s,hsl.l); return rgbToHex(rgb.r,rgb.g,rgb.b); }
+
+    /* ====== Apply accent & persist & mark active swatch ====== */
+    function applyAccent(hex){
+      const darker = darkenHex(hex, 18);
+      document.documentElement.style.setProperty('--accent', hex);
+      document.documentElement.style.setProperty('--accent-600', darker);
+      if(paletteColor.value.toLowerCase() !== hex.toLowerCase()) paletteColor.value = hex;
+      markActiveSwatch(hex);
+      savePrefs();
     }
 
-    function renderHistory(){
-      let history = [];
-      try { history = JSON.parse(localStorage.getItem(historyKey)) || []; } catch(e){}
-      if(history.length === 0){ historyContent.textContent = "Нет записей"; return; }
-      historyContent.innerHTML = history.map((item, idx)=>`
-        <div class="history-item">
-          <div class="history-header" data-idx="${idx}">${item.time}</div>
-          <div class="history-body" id="body-${idx}">
-            <u>Ввод:</u><pre>${item.input}</pre>
-            <u>Результат:</u><pre>${item.output}</pre>
-          </div>
-        </div>
-      `).join("");
+    function savePrefs(){
+      const prefs = {
+        theme: document.documentElement.getAttribute('data-theme') || 'light',
+        accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || defaultAccent
+      };
+      localStorage.setItem(prefsKey, JSON.stringify(prefs));
+    }
+    function loadPrefs(){
+      const raw = localStorage.getItem(prefsKey);
+      if(!raw) return;
+      try{
+        const p = JSON.parse(raw);
+        if(p.theme === 'dark') setTheme('dark');
+        if(p.accent) applyAccent(p.accent);
+        else applyAccent(defaultAccent);
+      }catch(e){}
+    }
 
-      document.querySelectorAll(".history-header").forEach(el=>{
-        el.addEventListener("click", ()=>{
-          const idx = el.dataset.idx;
-          const body = document.getElementById("body-"+idx);
-          if(body.classList.contains('open')){
-            body.style.maxHeight = null;
-            body.classList.remove('open');
-          } else {
-            body.classList.add('open');
-            body.style.maxHeight = body.scrollHeight + "px";
-          }
-        });
+    /* ====== Palette UI & active swatch handling ====== */
+    function buildPalettePresets(){
+      palettePresetsContainer.innerHTML = '';
+      presets.forEach(col=>{
+        const btn = document.createElement('button');
+        btn.className = 'swatch';
+        btn.style.background = col;
+        btn.dataset.color = col;
+        btn.setAttribute('aria-label', 'Выбрать ' + col);
+        btn.addEventListener('click', ()=> applyAccent(col));
+        palettePresetsContainer.appendChild(btn);
       });
     }
+    function markActiveSwatch(hex){
+      document.querySelectorAll('.swatch').forEach(s=>{
+        if(s.dataset.color && s.dataset.color.toLowerCase() === hex.toLowerCase()) s.classList.add('active');
+        else s.classList.remove('active');
+      });
+    }
+    paletteToggle.addEventListener('click', (ev)=>{
+      // avoid closing due to document click handler by stopping propagation
+      ev.stopPropagation();
+      const expanded = paletteToggle.getAttribute('aria-expanded') === 'true';
+      paletteToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      palettePopover.setAttribute('aria-hidden', expanded ? 'true' : 'false');
+      palettePopover.classList.toggle('open');
+    });
+    // Close popover when clicking outside paletteControl (fixed detection)
+    document.addEventListener('click', (ev)=>{
+      if(!paletteControl.contains(ev.target)){
+        palettePopover.classList.remove('open');
+        paletteToggle.setAttribute('aria-expanded','false');
+        palettePopover.setAttribute('aria-hidden','true');
+      }
+    });
+    paletteColor.addEventListener('input', (e)=> applyAccent(e.target.value));
+    paletteReset.addEventListener('click', ()=> applyAccent(defaultAccent));
 
-    clearHistoryBtn.addEventListener('click', ()=>{
-      if(confirm('Вы уверены, что хотите очистить историю?')){
-        localStorage.removeItem(historyKey);
-        renderHistory();
+
+    /* ====== History functions ====== */
+    function addToHistory(inputText, outputText){
+      const now = new Date();
+      const rec = { time: now.toLocaleString(), input: inputText, output: outputText };
+      let history = [];
+      try{ history = JSON.parse(localStorage.getItem(historyKey)) || []; }catch(e){}
+      history.unshift(rec);
+      localStorage.setItem(historyKey, JSON.stringify(history));
+      updateHistoryBadge(history.length);
+    }
+    function updateHistoryBadge(len){
+      historyCountEl.textContent = String(len || 0);
+      if(len && len>0) historyCountEl.classList.add('visible'); else historyCountEl.classList.remove('visible');
+    }
+    function renderHistory(){
+      let history = [];
+      try{ history = JSON.parse(localStorage.getItem(historyKey)) || []; }catch(e){}
+      if(history.length === 0){ historyContent.textContent = 'Нет записей'; return; }
+      historyContent.innerHTML = history.map((it, idx)=>`
+        <div class="history-item">
+          <div class="history-header" data-idx="${idx}" tabindex="0">${it.time}</div>
+          <div class="history-body" id="body-${idx}"><u>Ввод:</u><pre>${it.input}</pre><u>Результат:</u><pre>${it.output}</pre></div>
+        </div>
+      `).join('');
+      document.querySelectorAll('.history-header').forEach(h=>{
+        h.addEventListener('click', ()=> {
+          const idx = h.dataset.idx; const body = document.getElementById('body-'+idx);
+          if(body.classList.contains('open')) { body.style.maxHeight = null; body.classList.remove('open'); h.setAttribute('aria-expanded','false'); }
+          else { body.classList.add('open'); body.style.maxHeight = body.scrollHeight+'px'; h.setAttribute('aria-expanded','true'); }
+        });
+        h.addEventListener('keydown', (e)=> { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); h.click(); }});
+      });
+    }
+    historyBtn.addEventListener('click', ()=> {
+      renderHistory();
+      historyModal.style.display = 'flex';
+      requestAnimationFrame(()=> { historyModal.classList.add('show'); historyModal.setAttribute('aria-hidden','false'); });
+    });
+    closeHistory.addEventListener('click', ()=> {
+      historyModal.classList.remove('show'); historyModal.setAttribute('aria-hidden','true');
+      setTimeout(()=> historyModal.style.display='none', 320);
+    });
+    clearHistoryBtn.addEventListener('click', ()=> {
+      if(confirm('Вы уверены, что хотите очистить историю?')) {
+        localStorage.removeItem(historyKey); renderHistory(); updateHistoryBadge(0);
       }
     });
 
+    /* ====== Hotkeys modal ====== */
+    hotkeysBtn.addEventListener('click', ()=> {
+      hotkeysModal.style.display = 'flex';
+      requestAnimationFrame(()=> { hotkeysModal.classList.add('show'); hotkeysModal.setAttribute('aria-hidden','false'); });
+    });
+    closeHotkeys.addEventListener('click', ()=> {
+      hotkeysModal.classList.remove('show'); hotkeysModal.setAttribute('aria-hidden','true');
+      setTimeout(()=> hotkeysModal.style.display='none', 320);
+    });
+
+    /* ====== Normalize/Input handling ====== */
     function normalizeLine(s){
       let str = String(s).replace(/\r/g,'').trim();
       if(str.length >= 2){
-        const first = str[0], last = str[str.length - 1];
+        const first = str[0], last = str[str.length-1];
         if((first === '"' && last === '"') || (first === "'" && last === "'")) return str.slice(1,-1);
         if(str.startsWith('\\"') && str.endsWith('\\"')) return str.slice(2,-2);
         if(str.startsWith("\\'") && str.endsWith("\\'")) return str.slice(2,-2);
       }
       return str;
     }
+    function linesFromInput(text){ if(text==null) return []; const raw = String(text).replace(/\r/g,'').split(/\n/); return raw.map(s => normalizeLine(s)).filter(s => s.length>0); }
 
-    function linesFromInput(text){
-      if(text==null) return [];
-      const raw = String(text).replace(/\r/g,'').split(/\n/);
-      return raw.map(s => normalizeLine(s)).filter(s => s.length>0);
+    /* ====== Convert / UI feedback (dark theme unaffected) ====== */
+    function showConvertSuccess(){
+      mainPanel.classList.remove('converted'); void mainPanel.offsetWidth; mainPanel.classList.add('converted');
+      convertBtn.classList.add('success');
+      setTimeout(()=> { mainPanel.classList.remove('converted'); convertBtn.classList.remove('success'); }, 900);
     }
-
     function convert(){
       const arr = linesFromInput(input.value);
-      let content = arr.map(s=>`"${s}"`).join(',\n');
+      const content = arr.map(s=>`"${s}"`).join(',\n');
       output.value = '[\n' + content + '\n]';
       output.placeholder = '';
       addToHistory(input.value, output.value);
+      showConvertSuccess();
     }
-
     convertBtn.addEventListener('click', convert);
-    clearBtn.addEventListener('click', ()=>{
-      input.value='';
-      input.placeholder='Введите строки';
-      output.value='';
-      output.placeholder='Тут будет ваш результат';
+
+    /* ====== Clear / Copy (clear is left-aligned) ====== */
+    clearBtn.addEventListener('click', ()=> {
+      input.value=''; input.placeholder='Введите строки'; output.value=''; output.placeholder='Тут будет ваш результат';
+      saveInputDebounced(); // clear saved input
     });
 
-    copyBtn.addEventListener('click', async ()=>{
+    copyBtn.addEventListener('click', async ()=> {
       try{
         await navigator.clipboard.writeText(output.value);
-        copyBtn.textContent='Скопировано!';
-        setTimeout(()=>copyBtn.textContent='Копировать',1200);
+        copyBtn.classList.add('copied');
+        copyBtn.innerHTML = '<span class="btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="copy-label">Скопировано!</span>';
+        setTimeout(()=> { copyBtn.classList.remove('copied'); copyBtn.innerHTML = copyBtnOriginal; }, 1200);
       }catch(e){ alert('Не удалось скопировать — используйте Ctrl+C.'); }
     });
+    const copyBtnOriginal = copyBtn.innerHTML;
 
-    historyBtn.addEventListener('click', ()=>{
-      renderHistory();
-      historyModal.style.display='flex';
-      requestAnimationFrame(()=> historyModal.classList.add('show'));
-    });
+    /* ====== Autosave input (debounced, no visible label) ====== */
+    let autosaveTimer = null;
+    function saveInput(){ localStorage.setItem(inputSaveKey, input.value || ''); }
+    function saveInputDebounced(){ clearTimeout(autosaveTimer); autosaveTimer = setTimeout(()=> saveInput(), 700); }
+    input.addEventListener('input', ()=> { saveInputDebounced(); });
 
-    closeHistory.addEventListener('click', ()=>{
-      historyModal.classList.remove('show');
-      setTimeout(()=> historyModal.style.display='none', 350);
-    });
-
-    window.addEventListener('click', (e)=>{
-      if(e.target===historyModal){
-        historyModal.classList.remove('show');
-        setTimeout(()=> historyModal.style.display='none', 350);
+    /* ====== Keyboard shortcuts ====== */
+    window.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape'){
+        if(historyModal.classList.contains('show')) closeHistory.click();
+        if(hotkeysModal.classList.contains('show')) closeHotkeys.click();
+      }
+      if((e.ctrlKey || e.metaKey) && e.key === 'Enter'){
+        e.preventDefault(); convert();
       }
     });
 
-    const inputPlaceholder = input.placeholder || '';
-    input.addEventListener('focus', ()=>{ input.dataset.ph=input.placeholder; input.placeholder=''; });
-    input.addEventListener('blur', ()=>{ if(!input.value) input.placeholder = input.dataset.ph || inputPlaceholder; });
+    /* ====== Restore saved input & prefs & init ====== */
+    function restoreInput(){
+      const saved = localStorage.getItem(inputSaveKey);
+      if(saved){
+        input.value = saved;
+      }
+    }
 
+    function init(){
+      buildPalettePresets();
+      document.documentElement.style.setProperty('--accent', defaultAccent);
+      document.documentElement.style.setProperty('--accent-600', defaultAccent600);
+      loadPrefs();
+      restoreInput();
+      let hist = [];
+      try { hist = JSON.parse(localStorage.getItem(historyKey)) || []; } catch(e){}
+      updateHistoryBadge(hist.length);
+
+      palettePopover.setAttribute('aria-hidden','true'); palettePopover.classList.remove('open');
+
+      // allow closing modals by clicking backdrop
+      [historyModal, hotkeysModal].forEach(mod=>{
+        mod.addEventListener('click', (e)=> { if(e.target === mod){ mod.classList.remove('show'); mod.setAttribute('aria-hidden','true'); setTimeout(()=> mod.style.display='none',320); }});
+      });
+    }
+    init();
   </script>
 </body>
 </html>
