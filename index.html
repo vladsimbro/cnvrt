@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>UUID Converter</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="simple.css">
   <style>
     /* модалка для истории */
     .modal {
@@ -204,18 +204,20 @@
     }
 
     function convert(){
-      const arr = linesFromInput(input.value);
-      let result;
-      if(noQuotes.checked){
-        result = '[\n' + (arr.length ? arr.map(s => '  ' + s).join('\n') : '') + '\n]';
-      } else {
-        result = JSON.stringify(arr, null, 2);
-      }
-      output.value = result;
-      output.placeholder = '';
-      addToHistory(input.value, result);
-      saveUserState();
-    }
+  const arr = linesFromInput(input.value);
+  if(noQuotes.checked){
+    const content = arr.length ? arr.map(s => s).join('\n') : '';
+    output.value = '[\n' + content + '\n]';
+  } else {
+    // генерируем JSON вручную без лишних пробелов
+    const quoted = arr.map(s => `"${s}"`).join('\n');
+    output.value = '[\n' + quoted + '\n]';
+  }
+  // clear placeholder so user's result is visible
+  output.placeholder = '';
+  saveUserState();
+}
+
 
     // --- UI wiring ---
     convertBtn.addEventListener('click', convert);
