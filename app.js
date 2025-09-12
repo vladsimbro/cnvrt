@@ -405,8 +405,8 @@ document.addEventListener('DOMContentLoaded', () => {
   clearBtn && clearBtn.addEventListener('click', () => {
     if(input) input.value = '';
     if(output) output.value = '';
-    if(input) input.placeholder = 'Введите строки — каждая с новой строки...';
-    if(output) output.placeholder = 'Здесь появится результат';
+    if(input) input.placeholder = 'Введите строки...';
+    if(output) output.placeholder = 'Здесь появится результат...';
     saveInputDebounced();
   });
 
@@ -433,7 +433,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ===== Autosave input (debounced) =====
-
+  let autosaveTimer = null;
+  function saveInput(){ try{ localStorage.setItem(inputSaveKey, input.value || ''); }catch(e){} }
+  function saveInputDebounced(){ clearTimeout(autosaveTimer); autosaveTimer = setTimeout(()=> saveInput(), 700); }
+  input && input.addEventListener('input', () => { saveInputDebounced(); });
 
   // ===== Keyboard shortcuts =====
   window.addEventListener('keydown', (e) => {
