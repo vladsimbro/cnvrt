@@ -90,6 +90,7 @@ body{
 }
 .header-left{ display:flex; align-items:center; gap:12px; }
 .title{ font-size:20px; margin:0; font-weight:600; color:var(--text); }
+.titleERROR{ display:flex; font-size:13px; margin:12px; font-weight:400; color:var(--text);  }
 
 /* header controls */
 .header-controls{ display:flex; align-items:center; gap:8px; position:relative; }
