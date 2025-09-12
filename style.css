@@ -1,31 +1,68 @@
+/* style.css — стиль для UUID Converter
+   - glassy Discord-like dark theme
+   - safe convert animation (no flash-to-white)
+   - modal header inline + export button styles
+*/
+
+/* ---------------------------
+   Theme variables (defaults)
+   --------------------------- */
 :root{
-  /* Light theme variables */
+  /* Light theme */
   --bg: #f7f9fb;
-  --card: #ffffff;
+  --card: rgba(255,255,255,0.92);
   --muted: #6a7178;
+  --muted-weak: rgba(15,23,32,0.55);
   --border: #e6edf6;
-  --accent: #2b7be4;      /* overridden by palette */
-  --accent-600: #1a5fc1;  /* generated darker */
+  --text: #0f1720;
+
+  --accent: #2b7be4;
+  --accent-600: #1a5fc1;
+
   --radius: 14px;
   --max-width: 980px;
+
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", monospace;
   --ui: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  --shadow-1: 0 6px 18px rgba(20,30,50,0.06);
-  --shadow-2: 0 12px 32px rgba(10,20,40,0.08);
-  --text: #0f1720;
+
+  /* panel converted (highlight) — LIGHT defaults */
+  --panel-highlight-start: rgba(255,255,255,1);   /* bright flash start (light theme) */
+  --panel-highlight-end: rgba(255,255,255,0.96);  /* bright flash end */
+  --panel-highlight-shadow: 0 22px 48px rgba(43,123,228,0.12);
+  --converted-textarea-bg: linear-gradient(180deg,#fff,#fbfdff);
+
+  /* glass effect strength */
+  --glass-blur: 6px;
+  --glass-opacity: 0.90;
 }
 
-/* Improved Dark theme colors — softer, warmer blue accents, balanced surfaces */
+/* ---------------------------
+   Dark theme (discord-ish, glassy)
+   --------------------------- */
 :root[data-theme="dark"], html[data-theme="dark"] {
-  --bg: #0b1220;               /* deep navy */
-  --card: #0f1726;             /* card slightly lighter than background */
-  --muted: #94a3b8;            /* softer muted */
+  --bg: #0b1020;              /* deep navy/graphite */
+  --card: rgba(18,26,38,0.62); /* semi-transparent (glassy) */
+  --muted: #9fb0c9;
+  --muted-weak: rgba(230,238,248,0.14);
   --border: rgba(255,255,255,0.04);
   --text: #e6eef8;
-  --accent-600: #1a5fc1;       /* keep accent-600, will be updated by JS if needed */
+
+  --accent: #5865f2;          /* discord-like bluish purple */
+  --accent-600: #4751d8;
+
+  /* converted highlight — subtle bluish glow in dark */
+  --panel-highlight-start: rgba(88,101,242,0.06);  /* faint accent overlay */
+  --panel-highlight-end: rgba(88,101,242,0.02);
+  --panel-highlight-shadow: 0 18px 44px rgba(73,81,216,0.08);
+  --converted-textarea-bg: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+
+  --glass-blur: 10px;
+  --glass-opacity: 0.65;
 }
 
-/* Reset & base */
+/* ---------------------------
+   Reset & base
+   --------------------------- */
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -39,6 +76,9 @@ body{
   line-height:1.45;
   font-size:15px;
 }
+
+/* visually-hidden utility */
+.visually-hidden{ position:absolute !important; height:1px; width:1px; overflow:hidden; clip:rect(1px,1px,1px,1px); white-space:nowrap; }
 
 /* container */
 .container{ max-width:var(--max-width); margin:0 auto; padding:6px; }
@@ -59,6 +99,13 @@ body{
 }
 .icon-btn:hover{ background: rgba(255,255,255,0.02); }
 
+/* theme toggle pressed */
+#themeToggle[aria-pressed="true"]{
+  background:linear-gradient(90deg,var(--accent),var(--accent-600));
+  color:white;
+  box-shadow:0 10px 30px rgba(0,0,0,0.10);
+}
+
 /* palette popover */
 .palette-popover{
   display:none;
@@ -69,7 +116,8 @@ body{
   border:1px solid var(--border);
   padding:10px;
   border-radius:10px;
-  box-shadow: 0 18px 40px rgba(2,6,23,0.08);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
   z-index:40;
 }
 .palette-popover.open{ display:block; }
@@ -83,50 +131,72 @@ body{
 .palette-custom input[type="color"]{ width:36px; height:28px; padding:0; border:none; background:transparent; cursor:pointer; }
 .palette-actions{ margin-top:8px; display:flex; gap:8px; justify-content:flex-end; }
 
-/* panel */
+/* ---------------------------
+   Panel (card) — glassy surface
+   --------------------------- */
 .panel{
-  background:var(--card);
-  padding:20px;
+  background: var(--card);
   border-radius:var(--radius);
   border:1px solid var(--border);
-  box-shadow:var(--shadow-1);
-  transition:box-shadow 220ms ease, background 260ms ease;
+  padding:20px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  transition: box-shadow 220ms ease, background 260ms ease, transform 160ms ease;
 }
 
-/* converted highlight — applies white-only in light theme */
-/* make highlight without forcing white in dark theme */
-:root:not([data-theme="dark"]) .panel.converted textarea{
-  background: #ffffff !important;
-  color: #0b1720 !important;
-  box-shadow: 0 14px 40px rgba(43,123,228,0.12);
+/* ---------------------------
+   Converted highlight (safe)
+   --------------------------- */
+/* Use CSS variables — different per theme — to avoid forcing white */
+.panel.converted{
+  animation: panel-highlight 780ms cubic-bezier(.2,.9,.2,1);
+  box-shadow: var(--panel-highlight-shadow);
 }
-.panel.converted{ animation:panel-highlight 780ms cubic-bezier(.2,.9,.2,1); }
 @keyframes panel-highlight{
-  0%{ box-shadow:0 6px 18px rgba(20,30,50,0.06); background:linear-gradient(180deg,#fff,#fff); }
-  30%{ box-shadow:0 22px 48px rgba(43,123,228,0.12); background:linear-gradient(180deg,#fbfdff,#fff); }
-  100%{ box-shadow:var(--shadow-1); background:var(--card); }
+  0%{
+    background: linear-gradient(180deg, var(--panel-highlight-start), var(--panel-highlight-end));
+    transform: translateY(-2px);
+  }
+  30%{
+    background: linear-gradient(180deg, var(--panel-highlight-start), var(--panel-highlight-end));
+    transform: translateY(0);
+  }
+  100%{
+    background: var(--card);
+    transform: translateY(0);
+  }
 }
 
-/* layout blocks vertical */
+/* When panel is converted, adjust textareas slightly (but respect theme var) */
+.panel.converted textarea{
+  background: var(--converted-textarea-bg);
+  transition: box-shadow 200ms ease, background 200ms ease;
+  box-shadow: 0 14px 40px rgba(0,0,0,0.06);
+}
+
+/* blocks */
 .block{ display:block; margin-bottom:8px; }
 .input-block, .output-block{ width:100%; }
 
-/* label & fields */
+/* labels & small & footersmall */
 .small{ font-size:13px; color:var(--muted); display:block; margin-bottom:8px; }
+.footersmall{ font-size:13px; color:var(--muted); display:block; margin-bottom:0px; }
+.footersmall2{ font-size:9px; color:var(--muted); display:block; margin-bottom:0px; }
 .field-label{ display:inline-block; border-left:3px solid rgba(43,123,228,0.10); padding-left:11px; border-radius:4px; color:var(--muted); font-weight:600; line-height:1.4; }
 
-/* fixed textareas (no resize) and improved dark theme backgrounds */
+/* textareas */
 textarea{
   width:100%;
   padding:14px;
   border-radius:12px;
-  border:1px solid #d6e3f5;
+  border:1px solid var(--border);
   resize:none;
   font-family:var(--mono);
   font-size:14px;
   line-height:1.5;
-  background: linear-gradient(180deg,#fff,#fbfdff);
-  transition: box-shadow 180ms ease, border-color 180ms ease;
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.94));
+  transition: box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
   color:var(--text);
   outline:none;
 }
@@ -137,23 +207,38 @@ textarea{
 textarea::placeholder{ color: #9aa6b3; }
 textarea:focus{ border-color:var(--accent); box-shadow:0 8px 26px rgba(43,123,228,0.08); }
 
-/* set heights for input/output */
+/* heights */
 .input-block textarea{ min-height:220px; max-height:320px; }
 .output-block textarea{ min-height:220px; max-height:420px; }
 
 /* divider */
 .divider{ border:none; height:1px; background:var(--border); margin:14px 0; border-radius:2px; }
 
-/* controls row layout */
+/* controls row */
 .controls-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; }
 .controls-left{ display:flex; gap:12px; align-items:center; }
 .controls-right{ display:flex; gap:12px; align-items:center; }
 
 /* buttons */
-button{ display:inline-flex; align-items:center; justify-content:center; gap:8px; background:var(--accent); color:#fff; border:none; padding:10px 16px; border-radius:12px; cursor:pointer; font-weight:600; font-size:14px; transition: transform 160ms cubic-bezier(.2,.9,.2,1), box-shadow 160ms ease, background 160ms ease; box-shadow: 0 8px 20px rgba(43,123,228,0.12); flex:0 0 auto; }
+button{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  background:var(--accent); color:#fff; border:none; padding:10px 16px;
+  border-radius:12px; cursor:pointer; font-weight:600; font-size:14px;
+  transition: transform 160ms cubic-bezier(.2,.9,.2,1), box-shadow 160ms ease, background 160ms ease;
+  box-shadow: 0 8px 20px rgba(43,123,228,0.12); flex:0 0 auto;
+}
 button:hover{ transform:translateY(-3px) scale(1.01); box-shadow:0 20px 36px rgba(20,30,60,0.10); }
 button:active{ transform:translateY(-1px) scale(0.997); }
-button.ghost{ background:transparent; border:1px solid #d6e3f5; color:var(--text); box-shadow:none; padding:8px 12px; }
+
+/* ghost (outlined) buttons — adapt for dark theme */
+button.ghost{
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--text);
+  box-shadow:none;
+  padding:8px 12px;
+}
+:root[data-theme="dark"] button.ghost{ border:1px solid rgba(255,255,255,0.06); color:var(--text); }
 button.ghost:hover{ background: rgba(43,123,228,0.03); }
 
 /* icons */
@@ -164,14 +249,12 @@ button.ghost:hover{ background: rgba(43,123,228,0.03); }
 .badge{ display:inline-block; min-width:20px; height:20px; line-height:20px; padding:0 6px; margin-left:8px; background:var(--accent-600); color:white; font-size:12px; font-weight:700; border-radius:999px; box-shadow:0 6px 18px rgba(0,0,0,0.08); transform:translateY(-1px); opacity:0; transition:opacity 220ms ease, transform 220ms ease; }
 .badge.visible{ opacity:1; transform:translateY(0); }
 
-/* copy button state */
+/* copy and success states */
 button.copied{ background: linear-gradient(90deg,#16a34a,#10b981); box-shadow:0 12px 34px rgba(10,90,50,0.12); transform:translateY(-2px); }
-
-/* convert success */
 button.success{ background: linear-gradient(90deg,#16a34a,#0ea56a); color:#fff; box-shadow:0 18px 40px rgba(12,80,40,0.18); }
 button.success::after{ content:'✓'; margin-left:8px; font-weight:700; }
 
-/* tooltip for convert only */
+/* tooltip */
 button[data-tooltip]{ position:relative; }
 button[data-tooltip]::after{
   content: attr(data-tooltip);
@@ -182,13 +265,36 @@ button[data-tooltip]::before{ content:''; position:absolute; bottom: calc(100% +
 button[data-tooltip]:hover::after, button[data-tooltip]:focus::after{ opacity:1; transform:translateX(-50%) translateY(0); }
 button[data-tooltip]:hover::before, button[data-tooltip]:focus::before{ opacity:1; }
 
-/* modal */
+/* ---------------------------
+   Modal (glassy)
+   --------------------------- */
 .modal{ display:none; position:fixed; inset:0; background:rgba(6,12,22,0.45); justify-content:center; align-items:center; z-index:1200; padding:20px; }
 .modal.animated{ opacity:0; transform:translateY(-12px) scale(0.997); transition:opacity 220ms ease, transform 220ms ease; }
 .modal.animated.show{ display:flex; opacity:1; transform:translateY(0) scale(1); }
-.modal-content{ background:var(--card); padding:18px; width:640px; max-width:100%; max-height:86vh; border-radius:16px; display:flex; flex-direction:column; overflow:hidden; box-shadow: 0 30px 60px rgba(10,18,30,0.2); }
-.close{ align-self:flex-end; background:transparent; border:none; font-size:22px; cursor:pointer; color:var(--text); padding:6px 8px; border-radius:10px; }
-.close:hover{ background: rgba(43,123,228,0.03); }
+.modal-content{
+  background: var(--card);
+  padding:18px;
+  width:640px; max-width:100%; max-height:86vh;
+  border-radius:16px;
+  display:flex; flex-direction:column; overflow:hidden;
+  border: 1px solid var(--border);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  box-shadow: 0 30px 60px rgba(10,18,30,0.2);
+}
+
+/* modal header inline */
+.modal-header{
+  display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px;
+}
+.modal-header h2{ margin:0; font-size:18px; line-height:1; font-weight:700; color:var(--text); }
+.modal-actions{ display:flex; gap:8px; align-items:center; }
+
+/* close button inside modal header — not pushing title */
+.modal-content .close{
+  background:transparent; border:none; font-size:20px; cursor:pointer; padding:6px 8px; border-radius:10px; color:var(--text); margin:0;
+}
+.modal-content .close:hover{ background: rgba(43,123,228,0.03); }
 
 /* history styling */
 .history-list{ flex:1; overflow-y:auto; padding-right:6px; }
@@ -212,6 +318,7 @@ button[data-tooltip]:hover::before, button[data-tooltip]:focus::before{ opacity:
   .output-block textarea{ min-height:180px; }
   .controls-right{ flex-wrap:wrap; gap:8px; }
   .badge{ display:none; }
+  .modal-content{ width:100%; padding:14px; border-radius:12px; }
 }
 
 /* reduced motion */
