@@ -406,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(input) input.value = '';
     if(output) output.value = '';
     if(input) input.placeholder = 'Введите строки...';
-    if(output) output.placeholder = 'Здесь появится результат';
+    if(output) output.placeholder = 'Здесь появится результат...';
     saveInputDebounced();
   });
 
