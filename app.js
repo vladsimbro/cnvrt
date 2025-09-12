@@ -433,10 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ===== Autosave input (debounced) =====
-  let autosaveTimer = null;
-  function saveInput(){ try{ localStorage.setItem(inputSaveKey, input.value || ''); }catch(e){} }
-  function saveInputDebounced(){ clearTimeout(autosaveTimer); autosaveTimer = setTimeout(()=> saveInput(), 700); }
-  input && input.addEventListener('input', () => { saveInputDebounced(); });
+
 
   // ===== Keyboard shortcuts =====
   window.addEventListener('keydown', (e) => {
