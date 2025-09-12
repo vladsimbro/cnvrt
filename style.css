@@ -301,7 +301,7 @@ button[data-tooltip]:hover::before, button[data-tooltip]:focus::before{ opacity:
 .history-list{ flex:1; overflow-y:auto; padding-right:6px; }
 .history-item{ margin-bottom:12px; border-radius:12px; background: var(--card); border:1px solid var(--border); box-shadow: 0 6px 12px rgba(10,20,40,0.03); overflow:hidden; }
 .history-header{ cursor:pointer; padding:12px 14px; font-weight:700; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px 12px 0 0; transition:background 160ms ease; }
-.history-body{ max-height:0; overflow:hidden; transition:max-height 320ms ease, padding 260ms ease; padding:0 12px; background:var(--card); }
+.history-body{ max-height:0; overflow:hidden; transition:max-height+1px 320ms ease, padding 260ms ease; padding:0 12px; background:var(--card); }
 .history-body.open{ padding:12px; overflow-y:auto; }
 .history-body pre{ background:transparent; padding:8px; border-radius:6px; white-space:pre-wrap; word-break:break-word; max-height:220px; overflow:auto; font-family:var(--mono); font-size:13px; }
 
