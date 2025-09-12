@@ -405,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
   clearBtn && clearBtn.addEventListener('click', () => {
     if(input) input.value = '';
     if(output) output.value = '';
-    if(input) input.placeholder = 'Введите строки — каждая с новой строки...';
+    if(input) input.placeholder = 'Введите строки...';
     if(output) output.placeholder = 'Здесь появится результат';
     saveInputDebounced();
   });
