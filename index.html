@@ -16,16 +16,13 @@
     <header class="site-header" role="banner">
       <div class="header-left">
         <h1 class="title">UUID Converter</h1>
-        <h4> Важно: есть проблема с версиями, перед работой нажмите ctrl+shift+r, позже фикс будет</h4>
       </div>
-
       <nav class="header-controls" role="navigation" aria-label="Настройки интерфейса">
         <!-- Palette picker -->
         <div class="palette-control" id="paletteControl" aria-label="Палитра акцента">
           <button class="icon-btn" id="paletteToggle" aria-haspopup="true" aria-expanded="false" aria-label="Открыть палитру акцента">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3C7 3 4 6 4 11c0 5 4 8 8 8s8-3 8-8c0-5-3-8-8-8z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
-
           <div class="palette-popover" id="palettePopover" role="dialog" aria-hidden="true" aria-label="Выбор цвета акцента">
             <div class="palette-presets" id="palettePresets" aria-hidden="false">
               <!-- Пресеты вставляются JS -->
@@ -35,7 +32,6 @@
               <input type="color" id="paletteColor" value="#2b7be4" aria-label="Выбрать свой цвет акцента">
               <span class="small">Свой цвет</span>
             </label>
-
             <div class="palette-actions">
               <button id="paletteReset" class="ghost small" type="button" aria-label="Сбросить цвет">Сбросить</button>
             </div>
@@ -57,6 +53,8 @@
       </nav>
     </header>
 
+    <p class="titleERROR"> Важно: есть проблема с версиями, перед работой нажмите ctrl+shift+r, позже фикс будет</p>
+    
     <!-- MAIN: ввод + вывод -->
     <main class="panel" id="mainPanel" role="main" aria-labelledby="mainTitle">
 
