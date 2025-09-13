@@ -1,4 +1,4 @@
-/* base variables */
+/* <variables> */
 :root{
   --bg: #eef1f4;
   --surface-1: rgba(255,255,255,0.96);
@@ -36,6 +36,7 @@
   --panel-shadow: 0 26px 72px rgba(6,10,14,0.10), 0 8px 28px rgba(6,10,14,0.06);
 }
 
+/* <theme-dark> */
 :root[data-theme="dark"], html[data-theme="dark"] {
   --bg: #101217;
   --surface-1: rgba(28,32,38,0.68);
@@ -64,6 +65,7 @@
   --panel-shadow: 0 26px 72px rgba(2,6,20,0.36), 0 18px 48px var(--accent-glow-strong);
 }
 
+/* <base-reset> */
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -79,10 +81,13 @@ body{
   transition: background 800ms ease, color 800ms ease;
 }
 
+/* <accessibility> */
 .visually-hidden{ position:absolute !important; height:1px; width:1px; overflow:hidden; clip:rect(1px,1px,1px,1px); white-space:nowrap; }
 
+/* <layout> */
 .container{ max-width:var(--max-width); margin:0 auto; padding:6px; }
 
+/* <header> */
 .site-header{
   display:flex; align-items:center; justify-content:space-between;
   gap:12px; margin-bottom:14px;
@@ -99,6 +104,7 @@ body{
 }
 .icon-btn:hover{ background: rgba(255,255,255,0.02); transform:translateY(-2px); }
 
+/* <palette> */
 .palette-popover{
   display:none;
   position:absolute;
@@ -124,6 +130,7 @@ body{
 .palette-custom input[type="color"]{ width:36px; height:28px; padding:0; border:none; background:transparent; cursor:pointer; }
 .palette-actions{ margin-top:8px; display:flex; gap:8px; justify-content:flex-end; }
 
+/* <panel> */
 .panel{
   background: var(--surface-1);
   border-radius:var(--radius);
@@ -148,6 +155,7 @@ body{
   100%{ transform: translateY(0) scale(1); }
 }
 
+/* <forms> */
 .block{ display:block; margin-bottom:8px; }
 .input-block, .output-block{ width:100%; }
 
@@ -156,6 +164,7 @@ body{
 .footersmall2{ font-size:9px; color:var(--muted); display:block; margin-top:2px; }
 .footersmall3{ font-size:12px; color:var(--muted); margin-top:6px; }
 
+/* <textarea> */
 textarea{
   width:100%;
   padding:14px;
@@ -194,12 +203,15 @@ textarea:focus{
 .input-block textarea{ min-height:220px; max-height:320px; overflow:auto; }
 .output-block textarea{ min-height:220px; max-height:420px; overflow:auto; }
 
+/* <divider> */
 .divider{ border:none; height:1px; background:var(--border); margin:14px 0; border-radius:2px; }
 
+/* <controls> */
 .controls-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; }
 .controls-left{ display:flex; gap:12px; align-items:center; }
 .controls-right{ display:flex; gap:12px; align-items:center; }
 
+/* <buttons> */
 button{
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
   background:var(--accent); color:#fff; border:none; padding:10px 16px;
@@ -249,6 +261,7 @@ button[data-tooltip]::before{ content:''; position:absolute; bottom: calc(100% +
 button[data-tooltip]:hover::after, button[data-tooltip]:focus::after{ opacity:1; transform:translateX(-50%) translateY(0); }
 button[data-tooltip]:hover::before, button[data-tooltip]:focus::before{ opacity:1; }
 
+/* <modal> */
 .modal{ display:none; position:fixed; inset:0; background:rgba(6,12,22,0.45); justify-content:center; align-items:center; z-index:1200; padding:20px; }
 .modal.animated{ opacity:0; transform:scale(0.997); transition:opacity 220ms ease, transform 220ms ease; }
 .modal.animated.show{ display:flex; opacity:1; transform:scale(1); }
@@ -279,6 +292,7 @@ button[data-tooltip]:hover::before, button[data-tooltip]:focus::before{ opacity:
 }
 .modal-content .close:hover{ background: rgba(43,123,228,0.03); }
 
+/* <history> */
 .history-list{
   flex:1;
   overflow-y:auto;
@@ -348,9 +362,11 @@ button[data-tooltip]:hover::before, button[data-tooltip]:focus::before{ opacity:
   box-shadow: inset 0 18px 36px var(--inset-dark);
 }
 
+/* <focus> */
 :focus:not(:focus-visible){ outline:none; }
 :focus-visible{ outline: 1px solid rgba(43,123,228,0.18); outline-offset:1px; border-radius:8px; }
 
+/* <update-notice> */
 .update-notice{
   margin-top:10px;
   padding:10px;
@@ -361,6 +377,7 @@ button[data-tooltip]:hover::before, button[data-tooltip]:focus::before{ opacity:
   font-size:13px;
 }
 
+/* <toast-update> */
 .update-toast{
   position: fixed;
   right: 18px;
@@ -375,7 +392,7 @@ button[data-tooltip]:hover::before, button[data-tooltip]:focus::before{ opacity:
   opacity:0;
   pointer-events:none;
   transition: opacity 320ms ease, transform 320ms cubic-bezier(.2,.9,.2,1);
-  z-index:1300;
+  z-index:20000; /* выше loader чтобы точно виден */
 }
 .update-toast.show{ opacity:1; transform: translateY(0) scale(1); pointer-events:auto; }
 .update-toast .ut-message{ font-size:13px; color:var(--text); flex:1; }
@@ -384,7 +401,7 @@ button[data-tooltip]:hover::before, button[data-tooltip]:focus::before{ opacity:
 .update-toast .ut-btn.primary{ background:var(--accent); color:#fff; box-shadow:0 12px 30px rgba(var(--accent-r,43),var(--accent-g,123),var(--accent-b,228),0.12); }
 .update-toast .ut-btn.ghost{ background:transparent; border:1px solid var(--border); color:var(--text); }
 
-/* base responsive (existing) */
+/* <responsive-base> */
 @media (max-width:920px){
   body{ padding:18px; }
   .panel{ padding:14px; }
@@ -398,11 +415,12 @@ button[data-tooltip]:hover::before, button[data-tooltip]:focus::before{ opacity:
   .update-toast{ right:12px; left:12px; bottom:12px; max-width: calc(100% - 24px); }
 }
 
+/* <reduced-motion> */
 @media (prefers-reduced-motion: reduce){
   *, *::before, *::after { animation-duration:1ms !important; animation-iteration-count:1 !important; transition-duration:1ms !important; scroll-behavior:auto !important; }
 }
 
-/* scrollbars */
+/* <scrollbars> */
 textarea::-webkit-scrollbar,
 .history-list::-webkit-scrollbar,
 .history-body::-webkit-scrollbar { width:10px; height:10px; }
@@ -424,7 +442,7 @@ textarea::-webkit-scrollbar-thumb:hover,
 
 textarea, .history-list, .history-body { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) var(--scroll-track); }
 
-/* loader */
+/* <loader> */
 #loader {
   position: fixed;
   top: 0;
@@ -440,6 +458,7 @@ textarea, .history-list, .history-body { scrollbar-width: thin; scrollbar-color:
 }
 #loader.hidden { opacity: 0; pointer-events: none; }
 
+/* <loader-dots> */
 .dots-container {
   display: flex;
   align-items: center;
@@ -467,10 +486,11 @@ textarea, .history-list, .history-body { scrollbar-width: thin; scrollbar-color:
   100% { transform: scale(0.9); opacity:0.9; }
 }
 
-/* === Mobile-specific improvements === */
+/* <mobile-improvements> */
 /* header stack, controls accessible */
 @media (max-width:720px){
   body{ padding:14px; font-size:14px; }
+
   .site-header{ flex-direction:column; align-items:flex-start; gap:10px; }
   .header-left{ width:100%; display:flex; align-items:center; justify-content:space-between; }
   .title{ font-size:18px; }
@@ -484,10 +504,20 @@ textarea, .history-list, .history-body { scrollbar-width: thin; scrollbar-color:
   .input-block textarea{ min-height:160px; max-height:260px; padding:12px; }
   .output-block textarea{ min-height:160px; max-height:300px; padding:12px; }
 
-  /* controls wrap and full-width on narrow screens */
-  .controls-row{ flex-direction:column; align-items:stretch; gap:10px; }
-  .controls-left, .controls-right{ width:100%; justify-content:space-between; }
-  button{ width:100%; justify-content:center; }
+  /* apply full-width only to controls buttons (fixes модалки и историю) */
+  .controls-row button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* keep modal action buttons auto-sized to avoid breaking header layout */
+  .modal .modal-actions button,
+  .modal .modal-header .close,
+  .modal .modal-actions .close,
+  .modal .modal-actions .ghost {
+    width: auto;
+    white-space: nowrap;
+  }
 
   /* palette popover repositioning */
   .palette-popover{ left:8px; right:auto; top:auto; margin-top:6px; }
@@ -505,8 +535,14 @@ textarea, .history-list, .history-body { scrollbar-width: thin; scrollbar-color:
   /* update toast becomes bottom full-width */
   .update-toast{ right:12px; left:12px; bottom:12px; padding:10px; min-width:0; max-width: calc(100% - 24px); border-radius:10px; }
   .update-toast .ut-message{ font-size:13px; }
+
+  /* protect against horizontal shift caused by wide children */
+  body { overflow-x: hidden; }
+
+  .modal-content { box-sizing: border-box; margin: 0 8px; max-width: calc(100% - 16px); }
 }
 
+/* <mobile-smaller> */
 @media (max-width:480px){
   body{ padding:10px; font-size:14px; }
   .title{ font-size:16px; }
@@ -523,8 +559,12 @@ textarea, .history-list, .history-body { scrollbar-width: thin; scrollbar-color:
   .controls-left, .controls-right{ gap:8px; }
 
   .history-body pre{ font-size:12px; }
+
+  /* scale down heavy shadows a bit on small devices */
+  .panel, .modal-content{ box-shadow: 0 18px 46px rgba(2,8,20,0.14); }
 }
 
+/* <mobile-tiny> */
 @media (max-width:360px){
   body{ padding:8px; font-size:13px; }
   .title{ font-size:15px; }
@@ -534,24 +574,19 @@ textarea, .history-list, .history-body { scrollbar-width: thin; scrollbar-color:
   .history-body.open{ max-height:36vh; }
 }
 
-/* tactile improvements: increase hit area for small touch devices */
+/* <touch-targets> */
 @media (hover: none) and (pointer: coarse){
   .icon-btn, button, .modal-content .close{ touch-action: manipulation; }
   .icon-btn{ padding:10px; }
 }
 
-/* keep scrollbars hidden until interaction on mobile for cleaner look */
+/* <scrollbar-behavior-mobile> */
 @media (max-width:720px){
   textarea::-webkit-scrollbar, .history-list::-webkit-scrollbar, .history-body::-webkit-scrollbar{ opacity:0; transition:opacity 220ms ease; }
   textarea:focus::-webkit-scrollbar, .history-list:hover::-webkit-scrollbar, .history-body:hover::-webkit-scrollbar{ opacity:1; }
 }
 
-/* ensure accessible focus states remain visible on mobile */
+/* <focus-mobile> */
 @media (max-width:720px){
   :focus-visible{ outline: 2px solid rgba(43,123,228,0.18); outline-offset:2px; }
-}
-
-/* final minor polish: scale down heavy shadows on very small screens */
-@media (max-width:480px){
-  .panel, .modal-content{ box-shadow: 0 18px 46px rgba(2,8,20,0.14); }
 }

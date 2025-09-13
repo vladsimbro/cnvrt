@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION = window.APP_VERSION || '1.2.0';
+  const APP_VERSION = window.APP_VERSION || '1.2.1';
   const historyKey = 'uuid_converter_history';
   const prefsKey = 'uuid_converter_prefs';
   const inputSaveKey = 'uuid_converter_input';
