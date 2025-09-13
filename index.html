@@ -4,41 +4,60 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>UUID Converter</title>
-  <!-- Подключаем стили -->
-  <link rel="stylesheet" href="style.css?v=1.0.6">
+
+  <!-- Коротко: версия и тема задаются ранне, чтобы не было мигания -->
+  <script>
+    (function(){
+      const APP_VERSION = '1.1.6';
+      window.APP_VERSION = APP_VERSION;
+      try {
+        const raw = localStorage.getItem('uuid_converter_prefs');
+        if (raw) {
+          const p = JSON.parse(raw);
+          if (p && p.theme) document.documentElement.setAttribute('data-theme', p.theme);
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="stylesheet" href="style.css?v=1.1.6" />
   <link rel="icon" href="favicon.jpg" />
 </head>
 <body>
-  <!-- APP SHELL: основной контейнер приложения -->
-  <div class="app-shell container">
+  <div id="loader" aria-hidden="true">
+    <div class="dots-container" aria-hidden="true">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+  </div>
 
-    <!-- HEADER: бренд + элементы управления (палитра, тема, хоткеи) -->
+  <div class="app-shell container">
     <header class="site-header" role="banner">
       <div class="header-left">
         <h1 class="title">UUID Converter</h1>
       </div>
+
       <nav class="header-controls" role="navigation" aria-label="Настройки интерфейса">
-        <!-- Palette picker -->
         <div class="palette-control" id="paletteControl" aria-label="Палитра акцента">
           <button class="icon-btn" id="paletteToggle" aria-haspopup="true" aria-expanded="false" aria-label="Открыть палитру акцента">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3C7 3 4 6 4 11c0 5 4 8 8 8s8-3 8-8c0-5-3-8-8-8z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
+
           <div class="palette-popover" id="palettePopover" role="dialog" aria-hidden="true" aria-label="Выбор цвета акцента">
-            <div class="palette-presets" id="palettePresets" aria-hidden="false">
-              <!-- Пресеты вставляются JS -->
-            </div>
+            <div class="palette-presets" id="palettePresets" aria-hidden="false"></div>
 
             <label class="palette-custom">
               <input type="color" id="paletteColor" value="#2b7be4" aria-label="Выбрать свой цвет акцента">
               <span class="small">Свой цвет</span>
             </label>
+
             <div class="palette-actions">
               <button id="paletteReset" class="ghost small" type="button" aria-label="Сбросить цвет">Сбросить</button>
             </div>
           </div>
         </div>
 
-        <!-- Theme toggle -->
         <button id="themeToggle" class="icon-btn" aria-pressed="false" aria-label="Переключить тему (светлая / тёмная)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -46,25 +65,22 @@
           </svg>
         </button>
 
-        <!-- Hotkeys help -->
         <button id="hotkeysBtn" class="icon-btn" aria-haspopup="true" aria-expanded="false" aria-controls="hotkeysModal" aria-label="Справка по горячим клавишам">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </nav>
     </header>
 
-    <p class="titleERROR"> Важно: есть проблема с версиями CSS(внешние изменения), перед работой нажмите ctrl+shift+r, позже фикс будет</p>
-    
-    <!-- MAIN: ввод + вывод -->
-    <main class="panel" id="mainPanel" role="main" aria-labelledby="mainTitle">
+    <p class="titleERROR" role="status">Важное: возможен конфликт версий CSS. При проблемах — Ctrl+Shift+R (жёсткая перезагрузка).</p>
 
-      <!-- INPUT -->
+    <main class="panel" id="mainPanel" role="main" aria-labelledby="mainTitle">
+      <h2 id="mainTitle" class="visually-hidden">Главная панель конвертера</h2>
+
       <section class="block input-block" aria-labelledby="inputLabel">
         <label id="inputLabel" class="small field-label" for="input">Поле для ввода</label>
         <textarea id="input" name="input" placeholder="Введите строки..." aria-label="Ввод строк для конвертации" spellcheck="false" autocomplete="off"></textarea>
       </section>
 
-      <!-- OUTPUT -->
       <section class="block output-block" aria-labelledby="outputLabel">
         <label id="outputLabel" class="small field-label" for="output">Результат</label>
         <textarea id="output" name="output" readonly placeholder="Здесь появится результат..." aria-label="Результат конвертации" spellcheck="false"></textarea>
@@ -106,27 +122,29 @@
       </section>
     </main>
 
-    <!-- FOOTER -->
     <footer class="site-footer" role="contentinfo">
-      <div class="footersmall">Локальная история хранится в LocalStorage.</div>
-      <div class="footersmall2">LocalStorage работает как личный ящик для вещей, данные хранятся не на сервере, а только у вас в браузере.</div>
+      <p class="footersmall">Локальная история хранится в LocalStorage.</p>
+      <p class="footersmall2">Данные не отправляются на сервер — всё сохраняется в браузере.</p>
+      <p id="appVersion" class="footersmall3" aria-live="polite">Версия: —</p>
     </footer>
   </div>
+
+  <!-- toast для обновлений (вставляется JS-ом) -->
+  <div id="updateToastRoot" aria-live="polite" aria-atomic="true"></div>
 
   <!-- HISTORY MODAL -->
   <div class="modal animated" id="historyModal" role="dialog" aria-modal="true" aria-labelledby="historyTitle" aria-hidden="true">
     <div class="modal-content" role="document">
-      <!-- modal header: заголовок + кнопки в одной строке -->
       <div class="modal-header">
         <h2 id="historyTitle">История</h2>
         <div class="modal-actions">
-          <button id="clearHistoryBtn" type="button" class="ghost" aria-label="Очистить историю">Очистить историю</button>
+          <button id="clearHistoryBtn" type="button" class="ghost" aria-label="Очистить историю">Очистить</button>
           <button class="close" id="closeHistory" aria-label="Закрыть историю">×</button>
         </div>
       </div>
 
-      <div id="historyNotice" class="small">Если сайт начинает лагать, можно удалить историю — она локальная.</div>
-      <div class="history-list" id="historyContent" aria-live="polite" style="margin-top:12px;">Нет записей</div>
+      <div id="historyNotice" class="small">Если сайт тормозит — можно очистить локальную историю.</div>
+      <div class="history-list" id="historyContent" aria-live="polite">Нет записей</div>
     </div>
   </div>
 
@@ -144,11 +162,10 @@
         <li><strong>Ctrl / ⌘ + Enter</strong> — Конвертировать</li>
         <li><strong>Esc</strong> — Закрыть модальные окна</li>
       </ul>
-      <div class="small muted">Поддерживаются клавиши Ctrl (Windows/Linux) и ⌘ (Mac).</div>
+      <div class="small muted">Поддерживаются Ctrl (Windows/Linux) и ⌘ (Mac).</div>
     </div>
   </div>
 
-  <!-- Подключение логики (app.js) -->
-  <script src="app.js?v=1.0.7" defer></script>
+  <script src="app.js?v=1.1.6" defer></script>
 </body>
 </html>
