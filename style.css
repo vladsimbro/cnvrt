@@ -1,3 +1,4 @@
+/* base variables */
 :root{
   --bg: #eef1f4;
   --surface-1: rgba(255,255,255,0.96);
@@ -35,7 +36,6 @@
   --panel-shadow: 0 26px 72px rgba(6,10,14,0.10), 0 8px 28px rgba(6,10,14,0.06);
 }
 
-/* Тёмная тема: постоянное цветное свечение вокруг панели */
 :root[data-theme="dark"], html[data-theme="dark"] {
   --bg: #101217;
   --surface-1: rgba(28,32,38,0.68);
@@ -156,7 +156,6 @@ body{
 .footersmall2{ font-size:9px; color:var(--muted); display:block; margin-top:2px; }
 .footersmall3{ font-size:12px; color:var(--muted); margin-top:6px; }
 
-/* textarea: явный эффект углубленности */
 textarea{
   width:100%;
   padding:14px;
@@ -352,7 +351,6 @@ button[data-tooltip]:hover::before, button[data-tooltip]:focus::before{ opacity:
 :focus:not(:focus-visible){ outline:none; }
 :focus-visible{ outline: 1px solid rgba(43,123,228,0.18); outline-offset:1px; border-radius:8px; }
 
-/* update notice */
 .update-notice{
   margin-top:10px;
   padding:10px;
@@ -363,7 +361,6 @@ button[data-tooltip]:hover::before, button[data-tooltip]:focus::before{ opacity:
   font-size:13px;
 }
 
-/* update toast (bottom-right) */
 .update-toast{
   position: fixed;
   right: 18px;
@@ -387,7 +384,7 @@ button[data-tooltip]:hover::before, button[data-tooltip]:focus::before{ opacity:
 .update-toast .ut-btn.primary{ background:var(--accent); color:#fff; box-shadow:0 12px 30px rgba(var(--accent-r,43),var(--accent-g,123),var(--accent-b,228),0.12); }
 .update-toast .ut-btn.ghost{ background:transparent; border:1px solid var(--border); color:var(--text); }
 
-/* responsive */
+/* base responsive (existing) */
 @media (max-width:920px){
   body{ padding:18px; }
   .panel{ padding:14px; }
@@ -468,4 +465,93 @@ textarea, .history-list, .history-body { scrollbar-width: thin; scrollbar-color:
   0% { transform: scale(0.9); opacity:0.9; }
   50% { transform: scale(1.12); opacity:1; }
   100% { transform: scale(0.9); opacity:0.9; }
+}
+
+/* === Mobile-specific improvements === */
+/* header stack, controls accessible */
+@media (max-width:720px){
+  body{ padding:14px; font-size:14px; }
+  .site-header{ flex-direction:column; align-items:flex-start; gap:10px; }
+  .header-left{ width:100%; display:flex; align-items:center; justify-content:space-between; }
+  .title{ font-size:18px; }
+  .header-controls{ width:auto; }
+
+  /* panels and spacing */
+  .panel{ padding:12px; border-radius:12px; }
+  .container{ padding:4px; }
+
+  /* textarea sizing for smaller screens */
+  .input-block textarea{ min-height:160px; max-height:260px; padding:12px; }
+  .output-block textarea{ min-height:160px; max-height:300px; padding:12px; }
+
+  /* controls wrap and full-width on narrow screens */
+  .controls-row{ flex-direction:column; align-items:stretch; gap:10px; }
+  .controls-left, .controls-right{ width:100%; justify-content:space-between; }
+  button{ width:100%; justify-content:center; }
+
+  /* palette popover repositioning */
+  .palette-popover{ left:8px; right:auto; top:auto; margin-top:6px; }
+
+  /* modal becomes near-fullscreen for better UX */
+  .modal-content{ width:100%; height:86vh; max-height:86vh; border-radius:12px; padding:12px; }
+  .modal-header h2{ font-size:16px; }
+
+  /* history list adjustments */
+  .history-list{ padding:8px; }
+  .history-item{ border-radius:10px; }
+  .history-header{ padding:10px; font-size:14px; }
+  .history-body.open{ max-height:40vh; }
+
+  /* update toast becomes bottom full-width */
+  .update-toast{ right:12px; left:12px; bottom:12px; padding:10px; min-width:0; max-width: calc(100% - 24px); border-radius:10px; }
+  .update-toast .ut-message{ font-size:13px; }
+}
+
+@media (max-width:480px){
+  body{ padding:10px; font-size:14px; }
+  .title{ font-size:16px; }
+  .panel{ padding:10px; border-radius:10px; }
+  .icon-btn{ padding:6px; border-radius:8px; }
+  .swatch{ width:26px; height:26px; border-radius:6px; }
+  .palette-custom input[type="color"]{ width:32px; height:26px; }
+
+  textarea{ padding:12px; font-size:13px; }
+  .btn-icon{ width:16px; height:16px; }
+  button{ padding:10px 12px; font-size:13px; border-radius:10px; }
+
+  .controls-row{ gap:8px; }
+  .controls-left, .controls-right{ gap:8px; }
+
+  .history-body pre{ font-size:12px; }
+}
+
+@media (max-width:360px){
+  body{ padding:8px; font-size:13px; }
+  .title{ font-size:15px; }
+  .panel{ padding:8px; }
+  .modal-content{ padding:8px; }
+  button{ font-size:13px; padding:10px; }
+  .history-body.open{ max-height:36vh; }
+}
+
+/* tactile improvements: increase hit area for small touch devices */
+@media (hover: none) and (pointer: coarse){
+  .icon-btn, button, .modal-content .close{ touch-action: manipulation; }
+  .icon-btn{ padding:10px; }
+}
+
+/* keep scrollbars hidden until interaction on mobile for cleaner look */
+@media (max-width:720px){
+  textarea::-webkit-scrollbar, .history-list::-webkit-scrollbar, .history-body::-webkit-scrollbar{ opacity:0; transition:opacity 220ms ease; }
+  textarea:focus::-webkit-scrollbar, .history-list:hover::-webkit-scrollbar, .history-body:hover::-webkit-scrollbar{ opacity:1; }
+}
+
+/* ensure accessible focus states remain visible on mobile */
+@media (max-width:720px){
+  :focus-visible{ outline: 2px solid rgba(43,123,228,0.18); outline-offset:2px; }
+}
+
+/* final minor polish: scale down heavy shadows on very small screens */
+@media (max-width:480px){
+  .panel, .modal-content{ box-shadow: 0 18px 46px rgba(2,8,20,0.14); }
 }
