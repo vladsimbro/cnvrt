@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION = window.APP_VERSION || '1.1.5';
+  const APP_VERSION = window.APP_VERSION || '1.1.7';
   const historyKey = 'uuid_converter_history';
   const prefsKey = 'uuid_converter_prefs';
   const inputSaveKey = 'uuid_converter_input';
@@ -505,8 +505,8 @@
     clearBtn && clearBtn.addEventListener('click', () => {
       if(input) input.value = '';
       if(output) output.value = '';
-      if(input) input.placeholder = 'Введите строки — каждая с новой строки...';
-      if(output) output.placeholder = 'Здесь появится результат';
+      if(input) input.placeholder = 'Введите строки...';
+      if(output) output.placeholder = 'Здесь появится результат...';
     });
 
     copyBtn && copyBtn.addEventListener('click', async () => {
