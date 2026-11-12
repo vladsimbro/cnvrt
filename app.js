@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION = window.APP_VERSION || '1.3.0';
+  const APP_VERSION = window.APP_VERSION || '1.3.1';
 
   const historyKey = 'uuid_converter_history';
   const historyCounterKey = 'uuid_converter_history_counter';
@@ -8,6 +8,17 @@
   const versionKey = 'uuid_converter_version';
 
   const MAX_HISTORY = 2000;
+
+  // Usage analytics: only fixed event names and a safe tab label; never send form contents.
+  function trackUsage(eventName, tool){
+    try{
+      const tracker = window.umami;
+      if(!tracker || typeof tracker.track !== 'function') return;
+      const payload = tool === 'uuid' || tool === 'ng' ? {tool} : undefined;
+      const request = payload ? tracker.track(eventName, payload) : tracker.track(eventName);
+      if(request && typeof request.catch === 'function') request.catch(() => {});
+    }catch(_){ /* Analytics is optional and must never interrupt a conversion. */ }
+  }
 
   // Version migration notice
   try {
@@ -180,6 +191,7 @@
       addToHistory(input.value, out);
       if(historyModal.classList.contains('show')) renderHistory();
       showUuidConvertSuccess();
+      trackUsage('uuid_converted');
     }
 
     convertBtn && convertBtn.addEventListener('click', uuidConvert);
@@ -212,6 +224,7 @@
           await navigator.clipboard.writeText(text);
         }
 
+        trackUsage('result_copied', 'uuid');
         copyBtn.classList.add('copied');
         copyBtn.innerHTML = '<span class="btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="copy-label">Скопировано!</span>';
         setTimeout(()=> {
@@ -735,7 +748,7 @@ const treeUuids = document.getElementById('treeUuids');
         const button=e.target.closest('[data-action]');
         if(button){
           const action=button.dataset.action;
-          if(action==='copy'){try{await copyTextToClipboard(it.output || '');toast('Скопировано','success');}catch{toast('Не удалось скопировать','danger');}return;}
+          if(action==='copy'){try{await copyTextToClipboard(it.output || '');trackUsage('result_copied',tree?'ng':'uuid');toast('Скопировано','success');}catch{toast('Не удалось скопировать','danger');}return;}
           if(action==='rename'){
             const input=document.createElement('input');input.className='hh-input';input.value=it.name || '';input.maxLength=64;input.setAttribute('aria-label','Название записи');
             const name=header.querySelector('.hh-name');name.replaceChildren(input);input.focus();input.select();
@@ -933,7 +946,7 @@ const treeUuids = document.getElementById('treeUuids');
         }catch{toast('Неверный формат файла истории (JSON, до 20 МБ)','danger');}finally{file.value='';}
       };
       const outputEl=tree?treeOutput:output;
-      const download=document.createElement('button');download.className='ghost';download.textContent='Скачать';download.onclick=()=>{if(outputEl.value)downloadJson(outputEl.value,tree?'cnvrt-ng.json':'cnvrt.json');else toast('Нет результата','danger');};
+      const download=document.createElement('button');download.className='ghost';download.textContent='Скачать';download.onclick=()=>{if(outputEl.value){downloadJson(outputEl.value,tree?'cnvrt-ng.json':'cnvrt.json');trackUsage('result_downloaded',tree?'ng':'uuid');}else toast('Нет результата','danger');};
       document.querySelector(tree?'#panelTree .controls-right':'#panelUuid .controls-right').append(download);
     }
     setupHistory(false);
@@ -1388,6 +1401,7 @@ const payload = {
           output: out
         });
         toast('JSON готов', 'success');
+        trackUsage('ng_generated');
       });
 
       treeClear && treeClear.addEventListener('click', () => {
@@ -1441,6 +1455,7 @@ const payload = {
           } else {
             await navigator.clipboard.writeText(text);
           }
+          trackUsage('result_copied', 'ng');
           toast('Скопировано', 'success');
         }catch(e){
           toast('Не удалось скопировать', 'danger');
