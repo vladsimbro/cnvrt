@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION = window.APP_VERSION || '1.2.29';
+  const APP_VERSION = window.APP_VERSION || '1.3.0';
 
   const historyKey = 'uuid_converter_history';
   const historyCounterKey = 'uuid_converter_history_counter';
@@ -7,23 +7,14 @@
   const inputSaveKey = 'uuid_converter_input';
   const versionKey = 'uuid_converter_version';
 
-  const MAX_HISTORY = 200;
+  const MAX_HISTORY = 2000;
 
   // Version migration notice
   try {
     const prev = localStorage.getItem(versionKey);
     if (prev !== APP_VERSION) {
       localStorage.setItem(versionKey, APP_VERSION);
-      try { localStorage.removeItem(inputSaveKey); } catch (e) {}
 
-      try {
-        const raw = localStorage.getItem(prefsKey);
-        if (raw) {
-          const obj = JSON.parse(raw);
-          const safe = { theme: obj.theme || 'light', accent: obj.accent || '#2b7be4' };
-          localStorage.setItem(prefsKey, JSON.stringify(safe));
-        }
-      } catch (e) {}
 
       document.addEventListener('DOMContentLoaded', () => {
         const el = document.getElementById('updateNotice');
@@ -111,6 +102,7 @@
     const input = document.getElementById('input');
     const output = document.getElementById('output');
     const inputLineCount = document.getElementById('inputLineCount');
+    const outputLineCount = document.getElementById('outputLineCount');
     const treeUuidsLineCount = document.getElementById('treeUuidsLineCount');
     const convertBtn = document.getElementById('convert');
     const clearBtn = document.getElementById('clear');
@@ -152,6 +144,7 @@
     }
 
     function showUuidConvertSuccess(){
+      updateOutputLineCount();
       if(mainPanel){
         mainPanel.classList.remove('converted');
         void mainPanel.offsetWidth;
@@ -185,7 +178,7 @@
       output.scrollTop = 0;
 
       addToHistory(input.value, out);
-      renderHistory(); // keep modal up-to-date if open
+      if(historyModal.classList.contains('show')) renderHistory();
       showUuidConvertSuccess();
     }
 
@@ -195,7 +188,8 @@
       if(input){ input.value = ''; input.placeholder = 'Введите строки...'; }
       if(output){ output.value = ''; output.placeholder = 'Здесь появится результат...'; output.scrollTop = 0; }
       toast('Очищено', 'success');
-          updateInputLineCount();
+      updateInputLineCount();
+      updateOutputLineCount();
       input && input.focus();
     });
 
@@ -613,6 +607,7 @@ const treeUuids = document.getElementById('treeUuids');
 
     function migrateHistoryItems(items){
       const history = (items || []).map(it => ({
+        ...it,
         id: it?.id || makeId(),
         time: it?.time || new Date().toISOString(),
         name: (it?.name && String(it.name).trim()) ? String(it.name).trim() : 'Без названия',
@@ -644,22 +639,35 @@ const treeUuids = document.getElementById('treeUuids');
       return history;
     }
 
-    function readHistoryRaw(){
-      let history = [];
-      try{ history = JSON.parse(localStorage.getItem(historyKey)) || []; }catch(e){ history = []; }
-      return history;
+    const historyCache = new Map();
+    function readStoredHistory(key){
+      if(historyCache.has(key)) return historyCache.get(key);
+      try{
+        const data = JSON.parse(localStorage.getItem(key) || '[]');
+        const items = Array.isArray(data) ? data : [];
+        historyCache.set(key, items);
+        return items;
+      }catch(e){ toast('Не удалось прочитать историю. Исходные данные сохранены.', 'danger'); return []; }
     }
-
+    function persistHistory(key, items){
+      historyCache.set(key, items);
+      try{ localStorage.setItem(key, JSON.stringify(items)); return true; }
+      catch(e){ toast('Хранилище заполнено. Экспортируйте историю: изменения пока доступны только в этой вкладке.', 'danger'); return false; }
+    }
+    window.addEventListener('storage', e => {
+      if(e.key === historyKey || e.key === treeHistoryKey){ historyCache.delete(e.key); updateHistoryBadge(readHistory().length); updateTreeHistoryBadge(); }
+    });
+    function readHistoryRaw(){ return readStoredHistory(historyKey); }
     function readHistory(){
-      let history = [];
-      history = readHistoryRaw();
-      return migrateHistoryItems(history);
+      const items = readHistoryRaw();
+      if(!items.every(it => it.id && it.name && it.time)){
+        const migrated = migrateHistoryItems(items);
+        historyCache.set(historyKey, migrated);
+        return migrated;
+      }
+      return items;
     }
-
-    function writeHistory(history){
-      try{ localStorage.setItem(historyKey, JSON.stringify(history)); }catch(e){}
-      updateHistoryBadge(history.length);
-    }
+    function writeHistory(history){ persistHistory(historyKey, history); updateHistoryBadge(history.length); }
 
     function updateHistoryBadge(len){
       const el = document.getElementById('historyCount');
@@ -677,12 +685,8 @@ const treeUuids = document.getElementById('treeUuids');
     // NG history (for НГ tab)
     const treeHistoryKey = 'uuid_converter_tree_history';
 
-    function readTreeHistory(){
-      try{ return JSON.parse(localStorage.getItem(treeHistoryKey)) || []; }catch(e){ return []; }
-    }
-    function writeTreeHistory(arr){
-      try{ localStorage.setItem(treeHistoryKey, JSON.stringify(arr || [])); }catch(e){}
-    }
+    function readTreeHistory(){ return readStoredHistory(treeHistoryKey); }
+    function writeTreeHistory(arr){ persistHistory(treeHistoryKey, arr || []); }
     function updateTreeHistoryBadge(){
       const hist = readTreeHistory();
       if(!treeHistoryCountEl) return;
@@ -691,158 +695,81 @@ const treeUuids = document.getElementById('treeUuids');
     }
     function addTreeHistoryRecord(rec){
       const hist = readTreeHistory();
+      if(hist[0]?.output === rec.output) return;
+      if(hist.length >= MAX_HISTORY){ toast('Лимит новых записей НГ достигнут. Экспортируйте историю и удалите ненужные записи.', 'danger'); return; }
       hist.unshift(rec);
       writeTreeHistory(hist);
       updateTreeHistoryBadge();
     }
 
-    function renderTreeHistory(){
-      const hist = readTreeHistory();
-      if(!treeHistoryContent) return;
-      if(hist.length === 0){ treeHistoryContent.textContent = 'Нет записей'; return; }
-
-      treeHistoryContent.innerHTML = hist.map((it, idx)=>`
-        <div class="history-item" data-id="${escapeHtml(it.id)}">
-          <div class="history-header" data-idx="${idx}" tabindex="0" aria-expanded="false">
-            <div class="hh-left">
-              <div class="hh-name" data-role="name">${escapeHtml(it.name || '')}</div>
-              <div class="hh-time">${escapeHtml(formatTime(it.time))}</div>
-            </div>
-            <div class="hh-actions">
-              <button type="button" class="hh-btn ghost small" data-action="copy" data-idx="${idx}">Копировать</button>
-              <button type="button" class="hh-btn ghost small" data-action="rename" data-idx="${idx}">Переименовать</button>
-              <button type="button" class="hh-btn ghost small danger" data-action="delete" data-idx="${idx}">Удалить</button>
-            </div>
-          </div>
-          <div class="history-body" id="tree-body-${idx}">
-            <pre>${escapeHtml(it.output || '')}</pre>
-          </div>
-        </div>
-      `).join('');
-
-      treeHistoryContent.querySelectorAll('.history-header').forEach(h=>{
-        h.addEventListener('click', (e) => {
-          if((e.target instanceof HTMLElement) && e.target.closest('button')) return;
-          const idx = h.dataset.idx;
-          const body = document.getElementById('tree-body-'+idx);
-          if(!body) return;
-          if(body.classList.contains('open')){
-            body.style.maxHeight = null;
-            body.classList.remove('open');
-            h.setAttribute('aria-expanded','false');
-          } else {
-            body.classList.add('open');
-            body.style.maxHeight = body.scrollHeight + 'px';
-            h.setAttribute('aria-expanded','true');
+    function renderTreeHistory(){ renderHistoryList(true); }
+    const historyViews = [{query:'', limit:40}, {query:'', limit:40}];
+    function renderHistoryList(tree){
+      const host = tree ? treeHistoryContent : historyContent;
+      if(!host) return;
+      const items = tree ? readTreeHistory() : readHistory();
+      const state = historyViews[tree ? 1 : 0];
+      const query = state.query.toLocaleLowerCase();
+      const matches = [];
+      for(let idx=0; idx<items.length; idx++){
+        const it=items[idx];
+        if(!query || [it.name,it.input,it.output].some(v=>String(v || '').toLocaleLowerCase().includes(query))) matches.push(idx);
+      }
+      host.innerHTML = matches.slice(0,state.limit).map(idx=>{
+        const it=items[idx];
+        return `<article class="history-item"><div class="history-header" data-idx="${idx}" tabindex="0" aria-expanded="false"><div class="hh-left"><div class="hh-name">${escapeHtml(it.name || 'Запись')}</div><div class="hh-time">${escapeHtml(formatTime(it.time))}</div></div><div class="hh-actions"><button class="ghost small" data-action="copy" data-idx="${idx}">Копировать</button><button class="ghost small" data-action="rename" data-idx="${idx}">Переименовать</button><button class="ghost small danger" data-action="delete" data-idx="${idx}">Удалить</button></div></div><div class="history-body"></div></article>`;
+      }).join('') || 'Нет записей';
+      if(matches.length>state.limit) host.insertAdjacentHTML('beforeend', `<button class="ghost history-more">Показать ещё 40 · ${Math.min(state.limit,matches.length)} / ${matches.length}</button>`);
+    }
+    function setupHistory(tree){
+      const host=tree ? treeHistoryContent : historyContent;
+      if(!host) return;
+      const search=document.createElement('input'); search.type='search'; search.className='text-input history-search'; search.placeholder='Поиск по названию, вводу и результату'; search.setAttribute('aria-label','Поиск по истории'); host.before(search);
+      let timer;
+      search.addEventListener('input',()=>{ clearTimeout(timer); timer=setTimeout(()=>{ const state=historyViews[tree?1:0]; state.query=search.value; state.limit=40; renderHistoryList(tree); },150); });
+      host.addEventListener('keydown',e=>{if(e.target.matches('.history-header') && ['Enter',' '].includes(e.key)){e.preventDefault();e.target.click();}});
+      host.addEventListener('click',async e=>{
+        if(e.target.closest('.history-more')){ historyViews[tree?1:0].limit+=40; renderHistoryList(tree); return; }
+        const header=e.target.closest('.history-header'); if(!header || e.target.closest('input')) return;
+        const idx=Number(header.dataset.idx); const items=tree?readTreeHistory():readHistory(); const it=items[idx]; if(!it)return;
+        const button=e.target.closest('[data-action]');
+        if(button){
+          const action=button.dataset.action;
+          if(action==='copy'){try{await copyTextToClipboard(it.output || '');toast('Скопировано','success');}catch{toast('Не удалось скопировать','danger');}return;}
+          if(action==='rename'){
+            const input=document.createElement('input');input.className='hh-input';input.value=it.name || '';input.maxLength=64;input.setAttribute('aria-label','Название записи');
+            const name=header.querySelector('.hh-name');name.replaceChildren(input);input.focus();input.select();
+            let finished=false;
+            const save=()=>{if(finished)return;finished=true;it.name=input.value.trim() || it.name;(tree?writeTreeHistory:writeHistory)(items);renderHistoryList(tree);};
+            input.addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();save();}if(ev.key==='Escape'){finished=true;ev.stopPropagation();renderHistoryList(tree);}});input.addEventListener('change',save,{once:true});return;
           }
-        });
-        h.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); h.click(); }});
-      });
-
-      treeHistoryContent.querySelectorAll('button[data-action]').forEach(btn=>{
-        btn.addEventListener('click', async () => {
-          const idx = parseInt(btn.getAttribute('data-idx') || '-1',10);
-          const action = btn.getAttribute('data-action');
-          const hist2 = readTreeHistory();
-          if(idx < 0 || idx >= hist2.length) return;
-
-          if(action === 'copy'){
-            try{
-              await copyTextToClipboard(hist2[idx].output || '');
-              toast('Скопировано', 'success');
-            }catch(e){
-              toast('Не удалось скопировать', 'danger');
-            }
-            return;
+          if(action==='delete' && await confirmUI({title:'Удалить запись',message:'Удалить запись из истории?',okText:'Удалить',danger:true})){
+            const current=items.indexOf(it); if(current<0)return;items.splice(current,1);(tree?writeTreeHistory:writeHistory)(items);updateTreeHistoryBadge();renderHistoryList(tree);
           }
-
-          if(action === 'rename'){
-            const header = treeHistoryContent.querySelector(`.history-header[data-idx="${idx}"]`);
-            if(!header) return;
-            if(header.dataset.editing === '1') return;
-            header.dataset.editing = '1';
-
-            const actionsEl = header.querySelector('.hh-actions');
-            const leftEl = header.querySelector('.hh-left');
-            if(!leftEl || !actionsEl) return;
-
-            const currentName = hist2[idx].name || '';
-
-            // Build edit UI using DOM (no innerHTML injection)
-            leftEl.innerHTML = '';
-            const wrap = document.createElement('div');
-            wrap.className = 'hh-edit';
-
-            const inputEl = document.createElement('input');
-            inputEl.className = 'hh-input';
-            inputEl.type = 'text';
-            inputEl.maxLength = 64;
-            inputEl.value = currentName;
-            inputEl.setAttribute('aria-label','Название записи');
-
-            const saveBtn = document.createElement('button');
-            saveBtn.type = 'button';
-            saveBtn.className = 'hh-btn ghost small';
-            saveBtn.textContent = 'Сохранить';
-
-            const cancelBtn = document.createElement('button');
-            cancelBtn.type = 'button';
-            cancelBtn.className = 'hh-btn ghost small';
-            cancelBtn.textContent = 'Отмена';
-
-            wrap.appendChild(inputEl);
-            wrap.appendChild(saveBtn);
-            wrap.appendChild(cancelBtn);
-            leftEl.appendChild(wrap);
-
-            Array.from(actionsEl.children).forEach(ch => { if(ch instanceof HTMLElement) ch.style.display = 'none'; });
-
-            const cleanup = () => { renderTreeHistory(); };
-            const save = () => {
-              const nv = String(inputEl.value || '').trim();
-              hist2[idx].name = nv || currentName || 'Запись';
-              writeTreeHistory(hist2);
-              renderTreeHistory();
-              toast('Сохранено', 'success');
-            };
-
-            saveBtn.addEventListener('click', save);
-            cancelBtn.addEventListener('click', cleanup);
-            inputEl.addEventListener('keydown', (e) => {
-              if(e.key === 'Enter'){ e.preventDefault(); save(); }
-              if(e.key === 'Escape'){ e.preventDefault(); cleanup(); }
-            });
-
-            inputEl.focus();
-            inputEl.select();
-            return;
-          }
-
-          if(action === 'delete'){
-            const ok = await confirmUI({
-              title: 'Удалить запись',
-              message: 'Удалить эту запись из истории НГ?',
-              okText: 'Удалить',
-              cancelText: 'Отмена',
-              danger: true
-            });
-            if(!ok) return;
-            hist2.splice(idx, 1);
-            writeTreeHistory(hist2);
-            updateTreeHistoryBadge();
-            renderTreeHistory();
-            toast('Удалено', 'success');
-          }
-        });
+          return;
+        }
+        const body=header.nextElementSibling;const open=header.getAttribute('aria-expanded')!=='true';header.setAttribute('aria-expanded',String(open));body.classList.toggle('open',open);
+        if(open){
+          body.replaceChildren();
+          for(const [label,value] of tree?[['Результат',it.output]]:[['Ввод',it.input],['Результат',it.output]]){const title=document.createElement('strong');title.textContent=label;const pre=document.createElement('pre');pre.textContent=value || '';body.append(title,pre);}
+        }else body.replaceChildren();
       });
     }
 
-
     // modals helpers (focus restore)
-    let lastFocus = null;
+    document.addEventListener('keydown', e=>{
+      if(e.key!=='Tab') return;
+      const modal=Array.from(document.querySelectorAll('.modal.show')).at(-1);
+      if(!modal) return;
+      const focusable=Array.from(modal.querySelectorAll('button,input,select,textarea,[tabindex="0"]')).filter(el=>el.getClientRects().length);
+      const first=focusable[0],last=focusable.at(-1);
+      if(e.shiftKey && document.activeElement===first){e.preventDefault();last?.focus();}
+      else if(!e.shiftKey && document.activeElement===last){e.preventDefault();first?.focus();}
+    });
+
     function openModal(modal, openerBtn, focusEl){
       if(!modal) return;
-      lastFocus = openerBtn || document.activeElement;
+      modal._opener = openerBtn || document.activeElement;
       modal.style.display = 'flex';
       requestAnimationFrame(() => {
         modal.classList.add('show');
@@ -856,8 +783,8 @@ const treeUuids = document.getElementById('treeUuids');
       modal.classList.remove('show');
       modal.setAttribute('aria-hidden','true');
       openerBtn && openerBtn.setAttribute('aria-expanded','false');
-      setTimeout(()=> modal.style.display='none', 220);
-      if(lastFocus && lastFocus.focus) setTimeout(()=> lastFocus.focus(), 0);
+      setTimeout(()=> { if(!modal.classList.contains('show')) modal.style.display='none'; }, 220);
+      modal._opener?.focus();
     }
 
     function confirmUI({ title='Подтверждение', message='Вы уверены?', okText='Ок', cancelText='Отмена', danger=false }){
@@ -921,117 +848,13 @@ const treeUuids = document.getElementById('treeUuids');
       };
 
       history.unshift(rec);
-      if(history.length > MAX_HISTORY) history.length = MAX_HISTORY;
+
       writeHistory(history);
 
       toast('Добавлено в историю: ' + rec.name, 'success');
     }
 
-    function renderHistory(){
-      const history = readHistory();
-      writeHistory(history);
-
-      if(!historyContent) return;
-      if(history.length === 0){
-        historyContent.textContent = 'Нет записей';
-        return;
-      }
-
-      historyContent.innerHTML = history.map((it, idx)=>`
-        <div class="history-item" data-id="${escapeHtml(it.id)}">
-          <div class="history-header" data-idx="${idx}" tabindex="0" aria-expanded="false">
-            <div class="hh-left">
-              <div class="hh-name" data-role="name">${escapeHtml(it.name || '')}</div>
-              <div class="hh-time">${escapeHtml(formatTime(it.time))}</div>
-            </div>
-            <div class="hh-actions">
-              <button type="button" class="hh-btn ghost small" data-action="copy" data-idx="${idx}">Копировать</button>
-              <button type="button" class="hh-btn ghost small" data-action="rename" data-idx="${idx}">Переименовать</button>
-              <button type="button" class="hh-btn ghost small danger" data-action="delete" data-idx="${idx}">Удалить</button>
-            </div>
-          </div>
-          <div class="history-body" id="body-${idx}">
-            <u>Ввод:</u><pre>${escapeHtml(it.input)}</pre>
-            <u>Результат:</u><pre>${escapeHtml(it.output)}</pre>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // Inline rename UI helpers
-    function startInlineRename(idx){
-      const history = readHistory();
-      if(idx < 0 || idx >= history.length) return;
-
-      const header = historyContent.querySelector(`.history-header[data-idx="${idx}"]`);
-      if(!header) return;
-
-      if(header.dataset.editing === '1') return;
-      header.dataset.editing = '1';
-
-      const actions = header.querySelector('.hh-actions');
-      const left = header.querySelector('.hh-left');
-      if(!left || !actions) return;
-
-      const currentName = history[idx].name || '';
-
-      // Build edit UI using DOM (no innerHTML injection)
-      left.innerHTML = '';
-      const wrap = document.createElement('div');
-      wrap.className = 'hh-edit';
-
-      const inputEl = document.createElement('input');
-      inputEl.className = 'hh-input';
-      inputEl.type = 'text';
-      inputEl.maxLength = 64;
-      inputEl.value = currentName;
-      inputEl.setAttribute('aria-label', 'Название записи');
-
-      const saveBtn = document.createElement('button');
-      saveBtn.type = 'button';
-      saveBtn.className = 'hh-btn ghost small';
-      saveBtn.dataset.action = 'rename-save';
-      saveBtn.dataset.idx = String(idx);
-      saveBtn.textContent = 'Сохранить';
-
-      const cancelBtn = document.createElement('button');
-      cancelBtn.type = 'button';
-      cancelBtn.className = 'hh-btn ghost small';
-      cancelBtn.dataset.action = 'rename-cancel';
-      cancelBtn.dataset.idx = String(idx);
-      cancelBtn.textContent = 'Отмена';
-
-      wrap.appendChild(inputEl);
-      wrap.appendChild(saveBtn);
-      wrap.appendChild(cancelBtn);
-      left.appendChild(wrap);
-
-      actions.style.display = 'none';
-
-      inputEl.focus();
-      inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
-    }
-
-    function finishInlineRename(idx, commit){
-      const history = readHistory();
-      if(idx < 0 || idx >= history.length) return;
-
-      if(commit){
-        const header = historyContent.querySelector(`.history-header[data-idx="${idx}"]`);
-        const inputEl = header ? header.querySelector('input.hh-input') : null;
-        const nextName = (inputEl ? String(inputEl.value).trim() : '').slice(0, 64);
-        if(nextName.length === 0){
-          toast('Название не изменено (пусто)', 'danger');
-        }else{
-          history[idx].name = nextName;
-          writeHistory(history);
-          toast('Название сохранено', 'success');
-        }
-      }
-
-      // re-render to restore normal layout
-      renderHistory();
-    }
+    function renderHistory(){ renderHistoryList(false); }
 
     if(historyBtn){
       historyBtn.addEventListener('click', () => {
@@ -1080,7 +903,7 @@ const treeUuids = document.getElementById('treeUuids');
         });
         if(!ok) return;
 
-        try{ localStorage.removeItem(historyKey); }catch(e){}
+        writeHistory([]);
         try{ localStorage.setItem(historyCounterKey, '1'); }catch(e){}
         renderHistory();
         updateHistoryBadge(0);
@@ -1088,91 +911,33 @@ const treeUuids = document.getElementById('treeUuids');
       });
     }
 
-    // history interactions (toggle / rename / delete)
-    if(historyContent){
-      historyContent.addEventListener('click', async (ev) => {
-        const btn = ev.target.closest('button[data-action]');
-        if(btn){
-          const action = btn.dataset.action;
-          const idx = Number(btn.dataset.idx);
-          if(!Number.isFinite(idx)) return;
-
-          if(action === 'copy'){
-            const history = readHistory();
-            if(idx < 0 || idx >= history.length) return;
-            try{
-              await copyTextToClipboard(history[idx].output || '');
-              toast('Скопировано', 'success');
-            }catch(e){
-              toast('Не удалось скопировать', 'danger');
-            }
-            return;
-          }
-
-          if(action === 'rename'){
-            startInlineRename(idx);
-            return;
-          }
-          if(action === 'rename-cancel'){
-            finishInlineRename(idx, false);
-            return;
-          }
-          if(action === 'rename-save'){
-            finishInlineRename(idx, true);
-            return;
-          }
-
-          if(action === 'delete'){
-            const history = readHistory();
-            if(idx < 0 || idx >= history.length) return;
-
-            const ok = await confirmUI({
-              title: 'Удалить запись',
-              message: `Удалить "${history[idx].name}" из истории?`,
-              okText: 'Удалить',
-              cancelText: 'Отмена',
-              danger: true
-            });
-            if(!ok) return;
-
-            history.splice(idx, 1);
-            writeHistory(history);
-            renderHistory();
-            toast('Запись удалена', 'success');
-            return;
-          }
-        }
-
-        const header = ev.target.closest('.history-header');
-        if(!header) return;
-
-        // don't toggle when clicking buttons inside header
-        if(ev.target.closest('button')) return;
-
-        const idx = header.dataset.idx;
-        const body = document.getElementById('body-'+idx);
-        if(!body) return;
-
-        if(body.classList.contains('open')){
-          body.style.maxHeight = null;
-          body.classList.remove('open');
-          header.setAttribute('aria-expanded','false');
-        } else {
-          body.classList.add('open');
-          body.style.maxHeight = body.scrollHeight + 'px';
-          header.setAttribute('aria-expanded','true');
-        }
-      });
-
-      historyContent.addEventListener('keydown', (ev) => {
-        const header = ev.target.closest('.history-header');
-        if(!header) return;
-        if(ev.key === 'Enter' || ev.key === ' '){
-          ev.preventDefault();
-          header.click();
-        }
-      });
+    function downloadJson(value, name){
+      const url=URL.createObjectURL(new Blob([value],{type:'application/json'}));
+      const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
     }
+    for(const tree of [false,true]){
+      const modal=tree?treeHistoryModal:historyModal;
+      const actions=modal.querySelector('.modal-actions');
+      if(tree){const btn=document.createElement('button');btn.className='ghost';btn.textContent='Экспорт';btn.onclick=()=>downloadJson(JSON.stringify(readTreeHistory(),null,2),'cnvrt-ng-history.json');actions.prepend(btn);}
+      const btn=document.createElement('button');btn.className='ghost';btn.textContent='Импорт';
+      const file=document.createElement('input');file.type='file';file.accept='application/json';file.hidden=true;actions.prepend(btn,file);btn.onclick=()=>file.click();
+      file.onchange=async()=>{
+        try{
+          if(!file.files[0])return;
+          if(file.files[0].size>20*1024*1024)throw Error();
+          const imported=JSON.parse(await file.files[0].text());
+          if(!Array.isArray(imported) || imported.some(it=>!it || typeof it.output!=='string' || (!tree && typeof it.input!=='string')))throw Error();
+          const items=tree?readTreeHistory():readHistory(); const ids=new Set(items.map(it=>it.id));
+          for(const it of imported){if(it.id && ids.has(it.id))continue;const rec={...it,id:it.id||makeId(),name:it.name||'Импорт',time:it.time||new Date().toISOString()};items.push(rec);ids.add(rec.id);}
+          (tree?writeTreeHistory:writeHistory)(items);updateTreeHistoryBadge();renderHistoryList(tree);toast('История импортирована','success');
+        }catch{toast('Неверный формат файла истории (JSON, до 20 МБ)','danger');}finally{file.value='';}
+      };
+      const outputEl=tree?treeOutput:output;
+      const download=document.createElement('button');download.className='ghost';download.textContent='Скачать';download.onclick=()=>{if(outputEl.value)downloadJson(outputEl.value,tree?'cnvrt-ng.json':'cnvrt.json');else toast('Нет результата','danger');};
+      document.querySelector(tree?'#panelTree .controls-right':'#panelUuid .controls-right').append(download);
+    }
+    setupHistory(false);
+    setupHistory(true);
 
     // hotkeys modal
 
@@ -1228,6 +993,17 @@ const treeUuids = document.getElementById('treeUuids');
       if(!inputLineCount || !input) return;
       const n = countNonEmptyLines(input.value);
       inputLineCount.textContent = 'Кол-во строк: ' + n;
+    }
+
+    function updateOutputLineCount(){
+      if(!outputLineCount || !output) return;
+      // Each converted value occupies one line; the surrounding JSON brackets are not data.
+      const text = output.value;
+      let newlines = 0;
+      for(let i = 0; i < text.length; i++){
+        if(text.charCodeAt(i) === 10) newlines++;
+      }
+      outputLineCount.textContent = 'Кол-во строк: ' + Math.max(0, newlines - 1);
     }
 
     function updateTreeUuidsLineCount(){
@@ -1642,7 +1418,7 @@ const payload = {
           danger: true
         });
         if(!ok) return;
-        try{ localStorage.removeItem(treeHistoryKey); }catch(e){}
+        writeTreeHistory([]);
         updateTreeHistoryBadge();
         renderTreeHistory();
         toast('Очищено', 'success');
@@ -1703,13 +1479,3 @@ const payload = {
     init();
   });
 })();
-
-// loader hide
-window.addEventListener("load", () => {
-  const loader = document.getElementById("loader");
-  if(!loader) return;
-  loader.classList.add("hidden");
-  setTimeout(() => {
-    loader.style.display = "none";
-  }, 500);
-});

@@ -8,7 +8,7 @@
   <!-- Early apply theme + accent (no flicker) -->
   <script>
     (function(){
-      const APP_VERSION = '1.2.29';
+      const APP_VERSION = '1.3.0';
       window.APP_VERSION = APP_VERSION;
 
       function hexToRgb(hex){
@@ -83,7 +83,7 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="style.css?v=1.2.29-devtoys" />
+  <link rel="stylesheet" href="style.css?v=1.3.0" />
   <link rel="icon" href="favicon.jpg" />
 </head>
 <body>
@@ -91,7 +91,6 @@
     <header class="site-header" role="banner">
       <div class="header-left">
         <h1 class="title"><span class="brand-mark" aria-hidden="true">&lt;/&gt;</span> CNVRT</h1>
-        <p class="brand-caption">Инструменты для работы с данными</p>
       </div>
 
       <nav class="header-controls" role="navigation" aria-label="Настройки интерфейса">
@@ -162,7 +161,8 @@
         <section class="block editor-card output-block" aria-labelledby="outputLabel">
           <label id="outputLabel" class="small field-label" for="output">Результат <span class="field-meta">JSON</span></label>
           <div class="textarea-wrap">
-            <textarea id="output" name="output" readonly placeholder="Здесь появится результат..." aria-label="Результат конвертации" spellcheck="false"></textarea>
+            <textarea id="output" name="output" readonly placeholder="Здесь появится результат..." aria-label="Результат конвертации" spellcheck="false" class="with-counter"></textarea>
+            <div class="line-count" id="outputLineCount" aria-hidden="true" title="Количество строк данных, без скобок JSON">Кол-во строк: 0</div>
           </div>
 
         </section>
@@ -377,7 +377,7 @@
     </div>
   </div>
 
-<script src="app.js?v=1.2.29" defer></script>
+<script src="app.js?v=1.3.0" defer></script>
 <!-- Cloudflare Web Analytics -->
 <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "dd246dcde54b491eaaecfd3af669f6b3"}'></script>
 <!-- End Cloudflare Web Analytics -->
