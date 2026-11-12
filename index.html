@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>UUID Converter</title>
+  <title>CNVRT</title>
 
   <!-- Early apply theme + accent (no flicker) -->
   <script>
@@ -83,30 +83,21 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="style.css?v=1.2.29" />
+  <link rel="stylesheet" href="style.css?v=1.2.29-devtoys" />
   <link rel="icon" href="favicon.jpg" />
 </head>
 <body>
-  <div id="loader" aria-hidden="true">
-    <div class="dots-container" aria-hidden="true">
-      <div class="dot"></div>
-      <div class="dot"></div>
-      <div class="dot"></div>
-    </div>
-  </div>
-
   <div class="app-shell container">
     <header class="site-header" role="banner">
       <div class="header-left">
-        <h1 class="title">UUID Converter</h1>
+        <h1 class="title"><span class="brand-mark" aria-hidden="true">&lt;/&gt;</span> CNVRT</h1>
+        <p class="brand-caption">Инструменты для работы с данными</p>
       </div>
 
       <nav class="header-controls" role="navigation" aria-label="Настройки интерфейса">
         <div class="palette-control" id="paletteControl" aria-label="Палитра акцента">
           <button class="icon-btn" id="paletteToggle" aria-haspopup="true" aria-expanded="false" aria-label="Открыть палитру акцента">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M12 3C7 3 4 6 4 11c0 5 4 8 8 8s8-3 8-8c0-5-3-8-8-8z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18h1.2a2 2 0 0 0 1.4-3.4 1.5 1.5 0 0 1 1.1-2.6H18a3 3 0 0 0 3-3 9 9 0 0 0-9-9Z" stroke="currentColor" stroke-width="1.5"/><circle cx="7.5" cy="10" r="1" fill="currentColor"/><circle cx="11" cy="7" r="1" fill="currentColor"/><circle cx="16" cy="8" r="1" fill="currentColor"/></svg>
           </button>
 
           <div class="palette-popover" id="palettePopover" aria-hidden="true" aria-label="Выбор цвета акцента">
@@ -130,9 +121,7 @@
           </svg>
         </button>
 <button id="hotkeysBtn" class="icon-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="hotkeysModal" aria-label="Справка по горячим клавишам">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 10h1m3 0h1m3 0h1m3 0h.1M6 13h1m3 0h1m3 0h1m3 0h.1M8 16h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </button>
       </nav>
     </header>
@@ -162,18 +151,21 @@
       </div>
 
       <div id="panelUuid" class="tab-panel active" role="tabpanel" aria-labelledby="tabUuid">
-        <section class="block input-block" aria-labelledby="inputLabel">
-          <label id="inputLabel" class="small field-label" for="input">Поле для ввода</label>
+        <section class="block editor-card input-block" aria-labelledby="inputLabel">
+          <label id="inputLabel" class="small field-label" for="input">Исходные данные <span class="field-meta">TEXT / UUID</span></label>
           <div class="textarea-wrap">
         <textarea id="input" name="input" placeholder="Введите строки..." aria-label="Ввод строк для конвертации" spellcheck="false" autocomplete="off" class="with-counter"></textarea>
         <div class="line-count" id="inputLineCount" aria-hidden="true">Кол-во строк: 0</div>
       </div>
         </section>
 
-        <section class="block output-block" aria-labelledby="outputLabel">
-          <label id="outputLabel" class="small field-label" for="output">Результат</label>
-          <textarea id="output" name="output" readonly placeholder="Здесь появится результат..." aria-label="Результат конвертации" spellcheck="false"></textarea>
+        <section class="block editor-card output-block" aria-labelledby="outputLabel">
+          <label id="outputLabel" class="small field-label" for="output">Результат <span class="field-meta">JSON</span></label>
+          <div class="textarea-wrap">
+            <textarea id="output" name="output" readonly placeholder="Здесь появится результат..." aria-label="Результат конвертации" spellcheck="false"></textarea>
+          </div>
 
+        </section>
           <div class="controls-row" role="region" aria-label="Панель управления">
             <div class="controls-left">
               <button id="clear" type="button" class="ghost btn-animate" aria-label="Очистить поля">
@@ -208,10 +200,11 @@
               </button>
             </div>
           </div>
-        </section>
+
       </div>
 
       <div id="panelTree" class="tab-panel" role="tabpanel" aria-labelledby="tabTree" hidden>
+        <div class="tree-settings">
 <section class="block">
           <label class="small field-label" for="treeAction">Действие</label>
           <select id="treeAction" class="select" aria-label="Выберите действие">
@@ -262,10 +255,12 @@
       </div>
         </section>
 
-        <section class="block">
-          <label class="small field-label" for="treeOutput">Результат</label>
+        </div>
+        <section class="block editor-card tree-result">
+          <label class="small field-label" for="treeOutput">Результат <span class="field-meta">JSON</span></label>
           <textarea id="treeOutput" readonly placeholder="Здесь появится результат..." aria-label="Результат JSON" spellcheck="false"></textarea>
 
+        </section>
           <div class="controls-row" role="region" aria-label="Панель управления ёлочки">
             <div class="controls-left">
               <button id="treeClear" type="button" class="ghost btn-animate" aria-label="Очистить поля ёлочки">
@@ -299,7 +294,7 @@
               </button>
             </div>
           </div>
-        </section>
+
       </div>
     </main>
 
